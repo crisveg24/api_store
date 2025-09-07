@@ -39,7 +39,7 @@ def load_data_from_csv():
     """
     Carga los datos desde el archivo CSV a la base de datos.
     """
-    file_path = os.path.join(os.path.dirname(__file__), '/workspaces/api_store/config/Stores.csv')  
+    file_path = os.path.join(os.path.dirname(__file__), '/workspaces/api_store/config/files/Stores_clean.csv')  
     logging.info(f"Archivo CSV localizado en: {file_path}")
 
     session = None  # Inicializa la variable 'session'
