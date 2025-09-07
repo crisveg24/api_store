@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
-from models.store_model import Base, Store  # Asegúrate de importar Store desde el modelo
+from models.store_model import Base, Store  # Importar Store desde el modelo
 from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
@@ -41,22 +41,32 @@ def load_data_from_csv():
     """
     if not os.path.exists('stores.db'):  # Verifica si la base de datos no existe
         print("Base de datos no encontrada. Creando una nueva base de datos.")
-        # Leer el archivo CSV
+        
+        # Verificar la ruta del archivo CSV
         file_path = os.path.join(os.path.dirname(__file__), 'Stores.csv')  # Ruta completa
-        df = pd.read_csv(file_path)
+        print(f"Archivo CSV localizado en: {file_path}")
 
-        # Cargar los datos en la base de datos
-        session = Session()  # Crear una nueva sesión de base de datos
-        for _, row in df.iterrows():
-            store = Store(
-                store_area=row['Store_Area'],
-                items_available=row['Items_Available'],
-                daily_customer_count=row['Daily_Customer_Count'],
-                store_sales=row['Store_Sales']
-            )
-            session.add(store)
-        session.commit()  # Confirmar los cambios
-        session.close()  # Cerrar la sesión
+        try:
+            # Leer el archivo CSV
+            df = pd.read_csv(file_path)
+            print(f"Datos del CSV leídos con éxito: {df.head()}")
+            
+            # Cargar los datos en la base de datos
+            session = Session()  # Crear una nueva sesión de base de datos
+            for _, row in df.iterrows():
+                store = Store(
+                    store_area=row['Store_Area'],
+                    items_available=row['Items_Available'],
+                    daily_customer_count=row['Daily_Customer_Count'],
+                    store_sales=row['Store_Sales']
+                )
+                session.add(store)
+            session.commit()  # Confirmar los cambios
+            session.close()  # Cerrar la sesión
+            print("Datos cargados correctamente.")
+        
+        except Exception as e:
+            logging.error(f"Error al cargar el CSV: {e}")
 
 def get_db_session():
     """
