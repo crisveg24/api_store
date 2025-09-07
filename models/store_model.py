@@ -33,9 +33,8 @@ class Store(Base):
             'daily_customer_count': self.daily_customer_count,
             'store_sales': self.store_sales
         }
-
-        # Si tienes un campo que es de tipo 'bytes', conviértelo a base64 o a str
-        # Ejemplo si tienes un campo de imagen:
-        # store_dict['image'] = base64.b64encode(self.image_field).decode('utf-8')
-
+        # Convertir cualquier campo tipo bytes a base64
+        for k, v in store_dict.items():
+            if isinstance(v, bytes):
+                store_dict[k] = base64.b64encode(v).decode('utf-8')
         return store_dict
