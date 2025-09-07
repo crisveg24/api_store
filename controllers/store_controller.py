@@ -17,32 +17,12 @@ def get_stores():
     No recibe parámetros.
     Respuesta: JSON con la lista de tiendas.
     """
-    stores = service.listar_tiendas()
-    return jsonify([{
-        'store_id': s.store_id,
-        'store_area': s.store_area,
-        'items_available': s.items_available,
-        'daily_customer_count': s.daily_customer_count,
-        'store_sales': s.store_sales
-    } for s in stores]), 200
-
-
-@store_bp.route('/stores', methods=['GET'])
-def get_stores():
-    """
-    GET /stores
-    Recupera y retorna todas las tiendas registradas en el sistema.
-    Utiliza la capa de servicios para obtener la lista completa de tiendas.
-    No recibe parámetros.
-    Respuesta: JSON con la lista de tiendas.
-    """
-    stores = service.listar_tiendas()
-    store_list = []
-    for s in stores:
-        store_dict = s.to_dict()  # Aseguramos que to_dict devuelva solo tipos serializables
-        store_list.append(store_dict)
-    
-    return jsonify(store_list), 200
+    try:
+        stores = service.listar_tiendas()
+        store_list = [s.to_dict() for s in stores]
+        return jsonify(store_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @store_bp.route('/stores', methods=['POST'])
@@ -57,23 +37,20 @@ def create_store():
         store_sales (float): Ventas diarias de la tienda.
     Respuesta: JSON con los datos de la tienda creada.
     """
-    data = request.get_json()
-    store_area = data.get('store_area')
-    items_available = data.get('items_available')
-    daily_customer_count = data.get('daily_customer_count')
-    store_sales = data.get('store_sales')
+    try:
+        data = request.get_json()
+        store_area = data.get('store_area')
+        items_available = data.get('items_available')
+        daily_customer_count = data.get('daily_customer_count')
+        store_sales = data.get('store_sales')
 
-    if not store_area or not items_available or not daily_customer_count or not store_sales:
-        return jsonify({'error': 'Todos los campos son obligatorios'}), 400
+        if not all([store_area, items_available, daily_customer_count, store_sales]):
+            return jsonify({'error': 'Todos los campos son obligatorios'}), 400
 
-    store = service.crear_tienda(store_area, items_available, daily_customer_count, store_sales)
-    return jsonify({
-        'store_id': store.store_id,
-        'store_area': store.store_area,
-        'items_available': store.items_available,
-        'daily_customer_count': store.daily_customer_count,
-        'store_sales': store.store_sales
-    }), 201
+        store = service.crear_tienda(store_area, items_available, daily_customer_count, store_sales)
+        return jsonify(store.to_dict()), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @store_bp.route('/stores/<int:store_id>', methods=['PUT'])
@@ -89,22 +66,19 @@ def update_store(store_id):
         store_sales (float): Nuevas ventas diarias de la tienda.
     Respuesta: JSON con los datos de la tienda actualizada o error si no existe.
     """
-    data = request.get_json()
-    store_area = data.get('store_area')
-    items_available = data.get('items_available')
-    daily_customer_count = data.get('daily_customer_count')
-    store_sales = data.get('store_sales')
+    try:
+        data = request.get_json()
+        store_area = data.get('store_area')
+        items_available = data.get('items_available')
+        daily_customer_count = data.get('daily_customer_count')
+        store_sales = data.get('store_sales')
 
-    store = service.actualizar_tienda(store_id, store_area, items_available, daily_customer_count, store_sales)
-    if store:
-        return jsonify({
-            'store_id': store.store_id,
-            'store_area': store.store_area,
-            'items_available': store.items_available,
-            'daily_customer_count': store.daily_customer_count,
-            'store_sales': store.store_sales
-        }), 200
-    return jsonify({'error': 'Tienda no encontrada'}), 404
+        store = service.actualizar_tienda(store_id, store_area, items_available, daily_customer_count, store_sales)
+        if store:
+            return jsonify(store.to_dict()), 200
+        return jsonify({'error': 'Tienda no encontrada'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @store_bp.route('/stores/<int:store_id>', methods=['DELETE'])
@@ -116,7 +90,10 @@ def delete_store(store_id):
         store_id (int): ID de la tienda a eliminar (en la URL).
     Respuesta: JSON con mensaje de éxito o error si no existe.
     """
-    success = service.eliminar_tienda(store_id)
-    if success:
-        return jsonify({'message': 'Tienda eliminada'}), 200
-    return jsonify({'error': 'Tienda no encontrada'}), 404
+    try:
+        success = service.eliminar_tienda(store_id)
+        if success:
+            return jsonify({'message': 'Tienda eliminada'}), 200
+        return jsonify({'error': 'Tienda no encontrada'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

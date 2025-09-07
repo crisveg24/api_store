@@ -9,6 +9,7 @@ almacenando información relevante como el área de la tienda, el número de art
 y las ventas de la tienda. Esta clase está mapeada a la tabla 'stores' en la base de datos y permite gestionar la información 
 de las tiendas.
 """
+
 class Store(Base):
     __tablename__ = 'stores'
 
@@ -32,3 +33,7 @@ class Store(Base):
             'daily_customer_count': self.daily_customer_count,
             'store_sales': self.store_sales
         }
+
+    def __repr__(self):
+        return f"<Store(store_id={self.store_id}, store_area={self.store_area}, items_available={self.items_available}, daily_customer_count={self.daily_customer_count}, store_sales={self.store_sales})>"
+
