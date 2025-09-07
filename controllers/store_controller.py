@@ -27,25 +27,22 @@ def get_stores():
     } for s in stores]), 200
 
 
-@store_bp.route('/stores/<int:store_id>', methods=['GET'])
-def get_store(store_id):
+@store_bp.route('/stores', methods=['GET'])
+def get_stores():
     """
-    GET /stores/<store_id>
-    Recupera la información de una tienda específica por su ID.
-    Parámetros:
-        store_id (int): ID de la tienda a consultar (en la URL).
-    Respuesta: JSON con los datos de la tienda o 404 si no existe.
+    GET /stores
+    Recupera y retorna todas las tiendas registradas en el sistema.
+    Utiliza la capa de servicios para obtener la lista completa de tiendas.
+    No recibe parámetros.
+    Respuesta: JSON con la lista de tiendas.
     """
-    store = service.obtener_tienda(store_id)
-    if store:
-        return jsonify({
-            'store_id': store.store_id,
-            'store_area': store.store_area,
-            'items_available': store.items_available,
-            'daily_customer_count': store.daily_customer_count,
-            'store_sales': store.store_sales
-        }), 200
-    return jsonify({'error': 'Tienda no encontrada'}), 404
+    stores = service.listar_tiendas()
+    store_list = []
+    for s in stores:
+        store_dict = s.to_dict()  # Aseguramos que to_dict devuelva solo tipos serializables
+        store_list.append(store_dict)
+    
+    return jsonify(store_list), 200
 
 
 @store_bp.route('/stores', methods=['POST'])
