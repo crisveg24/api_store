@@ -10,3 +10,4 @@ Flask==3.0.3           # Framework web para crear APIs y aplicaciones web
 SQLAlchemy==2.0.30     # ORM para interactuar con bases de datos relacionales usando objetos Python
 pymysql==1.1.0         # Driver para conectar SQLAlchemy con bases de datos MySQL
 python-dotenv==1.0.1   # Cargar variables de entorno desde archivos .env
+pandas                 # Lector para el csv 

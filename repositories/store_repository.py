@@ -42,27 +42,27 @@ class StoreRepository:
         return new_store
 
     def update_store(self, store_id: int, store_area: float = None, items_available: int = None, 
-                     daily_customer_count: int = None, store_sales: float = None):
+                 daily_customer_count: int = None, store_sales: float = None):
         """
-        Actualiza la información de una tienda existente en la base de datos.
-        Permite modificar los atributos de una tienda identificada por su ID.
-        Si la tienda existe y se proporcionan nuevos valores, se actualizan los registros
-        y se guardan los cambios en la base de datos. Devuelve la instancia de la tienda actualizada
-        o None si no se encuentra la tienda.
+        Actualiza la información de una tienda existente, permitiendo modificar su área, artículos disponibles,
+        clientes diarios y ventas.
+        Utiliza el repositorio para realizar la actualización en la base de datos.
+        Es útil para mantener actualizada la información de las tiendas.
         """
         store = self.get_store_by_id(store_id)
         if store:
-            if store_area:
+            if store_area is not None:
                 store.store_area = store_area
-            if items_available:
+            if items_available is not None:
                 store.items_available = items_available
-            if daily_customer_count:
+            if daily_customer_count is not None:
                 store.daily_customer_count = daily_customer_count
-            if store_sales:
+            if store_sales is not None:
                 store.store_sales = store_sales
             self.db.commit()
             self.db.refresh(store)
         return store
+
 
     def delete_store(self, store_id: int):
         """
