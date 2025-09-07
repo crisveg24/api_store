@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
-from models.store_model import Base, Store  # Asegúrate de importar Store desde el modelo
+from models.store_model import Base, Store  
 from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
@@ -39,7 +39,7 @@ def load_data_from_csv():
     """
     Carga los datos desde el archivo CSV a la base de datos.
     """
-    file_path = os.path.join(os.path.dirname(__file__), '/workspaces/api_store/config/Stores.csv')  
+    file_path = os.path.join(os.path.dirname(__file__), 'config', 'Stores.csv')  
     logging.info(f"Archivo CSV localizado en: {file_path}")
 
     try:
@@ -58,11 +58,11 @@ def load_data_from_csv():
             )
             session.add(store)
         session.commit()  # Confirmar los cambios
-        session.close()  # Cerrar la sesión
-        logging.info("Datos cargados correctamente en la base de datos.")
-        
     except Exception as e:
         logging.error(f"Error al cargar el CSV: {e}")
+    finally:
+        session.close()  # Cerrar la sesión
+        logging.info("Datos cargados correctamente en la base de datos.")
 
 def get_db_session():
     """
@@ -72,3 +72,4 @@ def get_db_session():
 
 # Cargar datos desde el CSV cuando la aplicación se inicia
 load_data_from_csv()
+

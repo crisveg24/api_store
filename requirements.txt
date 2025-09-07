@@ -11,3 +11,4 @@ SQLAlchemy==2.0.30     # ORM para interactuar con bases de datos relacionales us
 pymysql==1.1.0         # Driver para conectar SQLAlchemy con bases de datos MySQL
 python-dotenv==1.0.1   # Cargar variables de entorno desde archivos .env
 pandas                 # Lector para el csv 
+base64                 # Codificación y decodificación de datos binarios a texto

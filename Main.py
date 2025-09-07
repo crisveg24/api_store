@@ -14,4 +14,4 @@ app.register_blueprint(store_bp)
 
 if __name__ == "__main__":
     # Ejecutar la aplicación con el modo debug activado
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)  # Especifica un puerto y host en caso de querer usar un entorno diferente

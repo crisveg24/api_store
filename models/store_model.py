@@ -1,14 +1,8 @@
+import base64
 from sqlalchemy import Column, Integer, Float
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
-
-"""
-La clase Store representa una tienda dentro del sistema. Cada instancia de esta clase corresponde a una tienda específica, 
-almacenando información relevante como el área de la tienda, el número de artículos disponibles, el número de clientes diarios 
-y las ventas de la tienda. Esta clase está mapeada a la tabla 'stores' en la base de datos y permite gestionar la información 
-de las tiendas.
-"""
 
 class Store(Base):
     __tablename__ = 'stores'
@@ -26,7 +20,13 @@ class Store(Base):
         self.store_sales = store_sales
 
     def to_dict(self):
-        return {
+        """
+        Convierte el objeto Store a un diccionario serializable en JSON.
+        Si en el futuro hay atributos con tipos no serializables (como imágenes en bytes),
+        los convierte a un formato adecuado (por ejemplo, base64).
+        :return: Diccionario con los atributos de la tienda.
+        """
+        store_dict = {
             'store_id': self.store_id,
             'store_area': self.store_area,
             'items_available': self.items_available,
@@ -34,6 +34,8 @@ class Store(Base):
             'store_sales': self.store_sales
         }
 
-    def __repr__(self):
-        return f"<Store(store_id={self.store_id}, store_area={self.store_area}, items_available={self.items_available}, daily_customer_count={self.daily_customer_count}, store_sales={self.store_sales})>"
+        # Si tienes un campo que es de tipo 'bytes', conviértelo a base64 o a str
+        # Ejemplo si tienes un campo de imagen:
+        # store_dict['image'] = base64.b64encode(self.image_field).decode('utf-8')
 
+        return store_dict
