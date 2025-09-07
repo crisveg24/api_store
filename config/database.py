@@ -39,8 +39,10 @@ def load_data_from_csv():
     """
     Carga los datos desde el archivo CSV a la base de datos.
     """
-    file_path = os.path.join(os.path.dirname(__file__), 'config', 'Stores.csv')  
+    file_path = os.path.join(os.path.dirname(__file__), '/workspaces/api_store/config/Stores.csv')  
     logging.info(f"Archivo CSV localizado en: {file_path}")
+
+    session = None  # Inicializa la variable 'session'
 
     try:
         # Leer el archivo CSV
@@ -58,11 +60,15 @@ def load_data_from_csv():
             )
             session.add(store)
         session.commit()  # Confirmar los cambios
+        logging.info("Datos cargados correctamente en la base de datos.")
+        
     except Exception as e:
         logging.error(f"Error al cargar el CSV: {e}")
     finally:
-        session.close()  # Cerrar la sesión
-        logging.info("Datos cargados correctamente en la base de datos.")
+        # Cerrar la sesión solo si fue abierta
+        if session:
+            session.close()
+
 
 def get_db_session():
     """
