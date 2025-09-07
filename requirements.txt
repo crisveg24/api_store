@@ -1,0 +1,12 @@
+# requirements.txt
+#
+# Este archivo especifica todas las dependencias necesarias para ejecutar el proyecto.
+# Usar un archivo requirements.txt permite:
+# - Instalar fácilmente todas las librerías requeridas con un solo comando (pip install -r requirements.txt)
+# - Garantizar la compatibilidad y reproducibilidad del entorno de desarrollo y producción
+# - Facilitar la colaboración entre desarrolladores y la integración continua
+
+Flask==3.0.3           # Framework web para crear APIs y aplicaciones web
+SQLAlchemy==2.0.30     # ORM para interactuar con bases de datos relacionales usando objetos Python
+pymysql==1.1.0         # Driver para conectar SQLAlchemy con bases de datos MySQL
+python-dotenv==1.0.1   # Cargar variables de entorno desde archivos .env
