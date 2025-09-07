@@ -1,16 +1,7 @@
 from sqlalchemy import Column, Integer, Float
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import create_engine  # Importar create_engine si es necesario
-from models.store_model import Store  # Importar el modelo de Store
 
 Base = declarative_base()
-
-# Define o importa 'engine' antes de usarlo
-# Por ejemplo, si usas SQLite:
-# engine = create_engine('sqlite:///stores.db')
-
-# Crear las tablas
-# Base.metadata.create_all(engine)
 
 """
 La clase Store representa una tienda dentro del sistema. Cada instancia de esta clase corresponde a una tienda específica, 
