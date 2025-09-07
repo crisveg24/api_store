@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
-from models.store_model import Base, Store  # Importar Store desde el modelo
+from models.store_model import Base, Store  # Asegúrate de importar Store desde el modelo
 from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
