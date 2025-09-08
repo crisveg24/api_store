@@ -1,0 +1,23 @@
+este es el orden de como hacer las solicitudes POST y PUT 
+{
+    "store_area": <float>,
+   "items_available": <int>,
+    "daily_customer_count": <int>,
+    "store_sales": <float>
+}
+curl -X PUT http://localhost:5000/stores/124 \
+  -H "Content-Type: application/json" \
+  -d '{"store_area": 2000, "items_available": 2100, "daily_customer_count": 800, "store_sales": 90000}'
+
+
+curl -X POST http://localhost:5000/stores \
+-H "Content-Type: application/json" \
+-d '{
+    "store_area": 1600,
+    "items_available": 1800,
+    "daily_customer_count": 450,
+    "store_sales": 65000
+}'
+
+
+curl -X DELETE http://localhost:5000/stores/124
