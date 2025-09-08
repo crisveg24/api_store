@@ -14,7 +14,7 @@ def get_stores():
     Recupera y retorna todas las tiendas registradas en el sistema.
     """
     stores = service.listar_tiendas()
-    store_list = [s.to_dict() for s in stores]  # Usamos list comprehension para simplificar
+    store_list = [s.to_dict() for s in stores]  # Usamos list para simplificar
     return jsonify(store_list), 200
 
 @store_bp.route('/stores', methods=['POST'])

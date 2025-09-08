@@ -47,8 +47,8 @@ def clean_csv(input_file, output_file):
         print(f"Error al procesar el CSV: {e}")
 
 # Definir las rutas del archivo CSV original y el archivo limpio
-input_file = '/workspaces/api_store/config/files/Stores.csv'  # Ajusta esta ruta si es necesario
-output_file = '/workspaces/api_store/config/files/Stores_clean.csv'  # Ruta para guardar el archivo limpio
+input_file = '/workspaces/api_store/config/files/Stores.csv'  
+output_file = '/workspaces/api_store/config/files/Stores_clean.csv'  
 
 # Llamar a la función para limpiar el CSV
 clean_csv(input_file, output_file)
