@@ -1,0 +1,29 @@
+<!-- /templates/index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Tiendas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Bienvenido a la Gestión de Tiendas</h1>
+    </header>
+
+    <section>
+        <h2>Lista de Tiendas</h2>
+        <ul id="store-list">
+            <!-- Aquí se llenarán las tiendas dinámicamente -->
+        </ul>
+        <button onclick="fetchStores()">Cargar Tiendas</button>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Gestión de Tiendas</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
