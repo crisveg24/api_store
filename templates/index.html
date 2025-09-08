@@ -1,29 +1,158 @@
-<!-- /templates/index.html -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Tiendas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Incluir Bootstrap desde CDN -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>Bienvenido a la Gestión de Tiendas</h1>
-    </header>
+    <div class="container mt-5">
+        <h1 class="text-center">Bienvenido a la Gestión de Tiendas</h1>
+        <button class="btn btn-primary mb-4" id="fetchStoresBtn">Obtener Tiendas</button>
+        <div id="storeList" class="list-group"></div>
+        <div id="storeFormContainer" class="mt-5">
+            <h2 class="text-center">Agregar / Editar Tienda</h2>
+            <form id="storeForm" class="form">
+                <div class="form-group">
+                    <label for="storeArea">Área de la Tienda:</label>
+                    <input type="number" id="storeArea" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemsAvailable">Artículos Disponibles:</label>
+                    <input type="number" id="itemsAvailable" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="dailyCustomerCount">Número de Clientes Diarios:</label>
+                    <input type="number" id="dailyCustomerCount" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="storeSales">Ventas de la Tienda:</label>
+                    <input type="number" id="storeSales" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success" id="submitBtn">Guardar Tienda</button>
+                <button type="button" class="btn btn-danger" id="cancelBtn">Cancelar</button>
+            </form>
+        </div>
+    </div>
 
-    <section>
-        <h2>Lista de Tiendas</h2>
-        <ul id="store-list">
-            <!-- Aquí se llenarán las tiendas dinámicamente -->
-        </ul>
-        <button onclick="fetchStores()">Cargar Tiendas</button>
-    </section>
+    <!-- Incluir jQuery y Bootstrap JS desde CDN -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-    <footer>
-        <p>&copy; 2025 Gestión de Tiendas</p>
-    </footer>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const apiUrl = 'https://fantastic-adventure-pj7x5vg97wxvc7vr6-5000.app.github.dev/stores';
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+        // Función para obtener las tiendas
+        function fetchStores() {
+            $.get(apiUrl, function(data) {
+                $('#storeList').empty();
+                data.forEach(store => {
+                    $('#storeList').append(`
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <h5 class="mb-1">Tienda #${store.store_id}</h5>
+                            <p class="mb-1">Área: ${store.store_area} m²</p>
+                            <p class="mb-1">Artículos: ${store.items_available}</p>
+                            <p class="mb-1">Clientes diarios: ${store.daily_customer_count}</p>
+                            <p class="mb-1">Ventas: ${store.store_sales}</p>
+                            <button class="btn btn-info btn-sm editBtn" data-id="${store.store_id}">Editar</button>
+                            <button class="btn btn-danger btn-sm deleteBtn" data-id="${store.store_id}">Eliminar</button>
+                        </a>
+                    `);
+                });
+
+                // Agregar funcionalidad de Editar y Eliminar
+                $('.editBtn').on('click', function() {
+                    const storeId = $(this).data('id');
+                    getStoreDetails(storeId);
+                });
+
+                $('.deleteBtn').on('click', function() {
+                    const storeId = $(this).data('id');
+                    deleteStore(storeId);
+                });
+            });
+        }
+
+        // Función para obtener los detalles de una tienda
+        function getStoreDetails(storeId) {
+            $.get(`${apiUrl}/${storeId}`, function(store) {
+                $('#storeArea').val(store.store_area);
+                $('#itemsAvailable').val(store.items_available);
+                $('#dailyCustomerCount').val(store.daily_customer_count);
+                $('#storeSales').val(store.store_sales);
+                $('#submitBtn').text('Actualizar Tienda');
+                $('#storeForm').data('storeId', storeId);
+            });
+        }
+
+        // Función para agregar o actualizar una tienda
+        $('#storeForm').on('submit', function(e) {
+            e.preventDefault();
+            const storeData = {
+                store_area: $('#storeArea').val(),
+                items_available: $('#itemsAvailable').val(),
+                daily_customer_count: $('#dailyCustomerCount').val(),
+                store_sales: $('#storeSales').val()
+            };
+
+            const storeId = $(this).data('storeId');
+            if (storeId) {
+                // Actualizar tienda
+                $.ajax({
+                    url: `${apiUrl}/${storeId}`,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(storeData),
+                    success: function() {
+                        alert('Tienda actualizada correctamente');
+                        fetchStores();  // Actualizar la lista
+                        resetForm();
+                    }
+                });
+            } else {
+                // Crear tienda
+                $.ajax({
+                    url: apiUrl,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(storeData),
+                    success: function() {
+                        alert('Tienda creada correctamente');
+                        fetchStores();  // Actualizar la lista
+                        resetForm();
+                    }
+                });
+            }
+        });
+
+        // Función para eliminar una tienda
+        function deleteStore(storeId) {
+            $.ajax({
+                url: `${apiUrl}/${storeId}`,
+                type: 'DELETE',
+                success: function() {
+                    alert('Tienda eliminada correctamente');
+                    fetchStores();  // Actualizar la lista
+                }
+            });
+        }
+
+        // Función para restablecer el formulario
+        function resetForm() {
+            $('#storeArea').val('');
+            $('#itemsAvailable').val('');
+            $('#dailyCustomerCount').val('');
+            $('#storeSales').val('');
+            $('#submitBtn').text('Guardar Tienda');
+            $('#storeForm').removeData('storeId');
+        }
+
+        // Llamar a fetchStores al cargar la página
+        fetchStores();
+    </script>
 </body>
 </html>
