@@ -1,158 +1,549 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Tiendas</title>
-    <!-- Incluir Bootstrap desde CDN -->
+    <title>Sistema de Gestión de Tiendas</title>
+    <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .auth-container {
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+        .user-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .store-item {
+            transition: transform 0.2s;
+        }
+        .store-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .admin-only {
+            display: none;
+        }
+        .user-badge {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+        }
+        .stats-card {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center">Bienvenido a la Gestión de Tiendas</h1>
-        <button class="btn btn-primary mb-4" id="fetchStoresBtn">Obtener Tiendas</button>
-        <div id="storeList" class="list-group"></div>
-        <div id="storeFormContainer" class="mt-5">
-            <h2 class="text-center">Agregar / Editar Tienda</h2>
-            <form id="storeForm" class="form">
-                <div class="form-group">
-                    <label for="storeArea">Área de la Tienda:</label>
-                    <input type="number" id="storeArea" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="itemsAvailable">Artículos Disponibles:</label>
-                    <input type="number" id="itemsAvailable" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="dailyCustomerCount">Número de Clientes Diarios:</label>
-                    <input type="number" id="dailyCustomerCount" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="storeSales">Ventas de la Tienda:</label>
-                    <input type="number" id="storeSales" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-success" id="submitBtn">Guardar Tienda</button>
-                <button type="button" class="btn btn-danger" id="cancelBtn">Cancelar</button>
-            </form>
+    <!-- Overlay de carga -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando...</p>
         </div>
     </div>
 
-    <!-- Incluir jQuery y Bootstrap JS desde CDN -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-store"></i> Sistema de Tiendas
+            </a>
+            
+            <div class="navbar-nav ml-auto">
+                <!-- Enlaces para usuarios no autenticados -->
+                <div id="guestNav" class="d-flex">
+                    <button class="btn btn-outline-light mr-2" id="showLoginBtn">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                    <button class="btn btn-light" id="showRegisterBtn">
+                        <i class="fas fa-user-plus"></i> Registrarse
+                    </button>
+                </div>
+                
+                <!-- Enlaces para usuarios autenticados -->
+                <div id="userNav" class="d-flex align-items-center hidden">
+                    <span class="navbar-text mr-3">
+                        <i class="fas fa-user"></i>
+                        <span id="welcomeUser">Bienvenido</span>
+                        <span id="userRole" class="badge badge-light user-badge ml-1"></span>
+                    </span>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-toggle="dropdown">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="#" id="profileBtn">
+                                <i class="fas fa-user-circle"></i> Mi Perfil
+                            </a>
+                            <div class="admin-only">
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" id="usersManagementBtn">
+                                    <i class="fas fa-users"></i> Gestión de Usuarios
+                                </a>
+                                <a class="dropdown-item" href="#" id="statsBtn">
+                                    <i class="fas fa-chart-line"></i> Estadísticas
+                                </a>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" id="logoutBtn">
+                                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Panel de autenticación -->
+        <div id="authPanel" class="hidden">
+            <!-- Formulario de Login -->
+            <div id="loginForm" class="auth-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="text-center"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="loginFormElement">
+                            <div class="form-group">
+                                <label for="loginIdentifier">Usuario o Email:</label>
+                                <input type="text" class="form-control" id="loginIdentifier" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="loginPassword">Contraseña:</label>
+                                <input type="password" class="form-control" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <small>¿No tienes cuenta? 
+                                <a href="#" id="switchToRegister">Regístrate aquí</a>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Registro -->
+            <div id="registerForm" class="auth-container hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="text-center"><i class="fas fa-user-plus"></i> Registrarse</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="registerFormElement">
+                            <div class="form-group">
+                                <label for="registerUsername">Nombre de Usuario:</label>
+                                <input type="text" class="form-control" id="registerUsername" required>
+                                <small class="form-text text-muted">3-20 caracteres, solo letras, números y guiones bajos</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="registerEmail">Email:</label>
+                                <input type="email" class="form-control" id="registerEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="registerPassword">Contraseña:</label>
+                                <input type="password" class="form-control" id="registerPassword" required>
+                                <small class="form-text text-muted">
+                                    Mínimo 8 caracteres, incluir mayúscula, minúscula, número y símbolo
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirmar Contraseña:</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-block">Registrarse</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <small>¿Ya tienes cuenta? 
+                                <a href="#" id="switchToLogin">Inicia sesión aquí</a>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel principal de la aplicación -->
+        <div id="mainPanel">
+            <!-- Información del usuario autenticado -->
+            <div id="userInfo" class="user-info hidden">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5><i class="fas fa-user-circle"></i> <span id="userInfoName"></span></h5>
+                        <p class="mb-0">
+                            <span class="badge badge-primary" id="userInfoRole"></span>
+                            <span class="text-muted ml-2" id="userInfoEmail"></span>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-right">
+                        <button class="btn btn-sm btn-outline-secondary" id="hideUserInfo">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de estadísticas (solo admin) -->
+            <div id="statsPanel" class="admin-only hidden">
+                <div class="stats-card">
+                    <h4><i class="fas fa-chart-line"></i> Estadísticas del Sistema</h4>
+                    <div class="row mt-3" id="statsContent">
+                        <!-- Se carga dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de gestión de usuarios (solo admin) -->
+            <div id="usersPanel" class="admin-only hidden">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4><i class="fas fa-users"></i> Gestión de Usuarios</h4>
+                        <button class="btn btn-primary" id="showUserFormBtn">
+                            <i class="fas fa-user-plus"></i> Nuevo Usuario
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Formulario para crear usuario -->
+                        <div id="userFormContainer" class="hidden mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 id="userFormTitle"><i class="fas fa-user-plus"></i> Crear Nuevo Usuario</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="userForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="newUsername" class="form-label">
+                                                        <i class="fas fa-user"></i> Username
+                                                    </label>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="newUsername" 
+                                                           placeholder="Ingrese username" 
+                                                           required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="newUserEmail" class="form-label">
+                                                        <i class="fas fa-envelope"></i> Email
+                                                    </label>
+                                                    <input type="email" 
+                                                           class="form-control" 
+                                                           id="newUserEmail" 
+                                                           placeholder="Ingrese email" 
+                                                           required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="newUserPassword" class="form-label">
+                                                        <i class="fas fa-lock"></i> Password
+                                                    </label>
+                                                    <input type="password" 
+                                                           class="form-control" 
+                                                           id="newUserPassword" 
+                                                           placeholder="Ingrese password (min 6 caracteres)" 
+                                                           minlength="6"
+                                                           required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="newUserRole" class="form-label">
+                                                        <i class="fas fa-user-tag"></i> Rol
+                                                    </label>
+                                                    <select class="form-control" id="newUserRole" required>
+                                                        <option value="user">Usuario Regular</option>
+                                                        <option value="admin">Administrador</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button type="button" class="btn btn-secondary" id="cancelUserBtn">
+                                                <i class="fas fa-times"></i> Cancelar
+                                            </button>
+                                            <button type="submit" class="btn btn-success" id="submitUserBtn">
+                                                <i class="fas fa-save"></i> Crear Usuario
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulario para editar usuario existente -->
+                        <div id="editUserFormContainer" class="hidden mb-4">
+                            <div class="card">
+                                <div class="card-header bg-warning text-white">
+                                    <h5 class="mb-0"><i class="fas fa-edit"></i> Editar Usuario</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="editUserForm">
+                                        <input type="hidden" id="editUserId">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="editUsername" class="form-label">
+                                                        <i class="fas fa-user"></i> Username
+                                                    </label>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="editUsername" 
+                                                           placeholder="Ingrese username (min 3 caracteres)" 
+                                                           minlength="3"
+                                                           required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="editUserEmail" class="form-label">
+                                                        <i class="fas fa-envelope"></i> Email
+                                                    </label>
+                                                    <input type="email" 
+                                                           class="form-control" 
+                                                           id="editUserEmail" 
+                                                           placeholder="Ingrese email válido"
+                                                           required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="editUserPassword" class="form-label">
+                                                        <i class="fas fa-lock"></i> Nueva Password (opcional)
+                                                    </label>
+                                                    <input type="password" 
+                                                           class="form-control" 
+                                                           id="editUserPassword" 
+                                                           placeholder="Dejar vacío para mantener actual" 
+                                                           minlength="6">
+                                                    <small class="form-text text-muted">Dejar vacío si no desea cambiar la contraseña</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="editUserRole" class="form-label">
+                                                        <i class="fas fa-user-tag"></i> Rol
+                                                    </label>
+                                                    <select class="form-control" id="editUserRole" required>
+                                                        <option value="user">Usuario Regular</option>
+                                                        <option value="admin">Administrador</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button type="button" class="btn btn-secondary" id="cancelEditUserBtn">
+                                                <i class="fas fa-times"></i> Cancelar
+                                            </button>
+                                            <button type="submit" class="btn btn-warning" id="submitEditUserBtn">
+                                                <i class="fas fa-save"></i> Actualizar Usuario
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="usersList">
+                            <!-- Se carga dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel principal de tiendas -->
+            <div id="storesPanel">
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <h2><i class="fas fa-store"></i> Gestión de Tiendas</h2>
+                    </div>
+                    <div class="col-md-4 text-right">
+                        <button class="btn btn-success admin-only" id="showStoreFormBtn">
+                            <i class="fas fa-plus"></i> Nueva Tienda
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controles de paginación y filtros -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <button class="btn btn-primary" id="fetchStoresBtn">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="perPageSelect">Por página:</label>
+                            <select id="perPageSelect" class="form-control">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="paginationInfo" class="mt-4 text-right">
+                            <!-- Información de paginación -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controles de navegación -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <nav aria-label="Navegación de tiendas">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item" id="firstPageItem">
+                                    <a class="page-link" href="#" id="firstPageBtn">
+                                        <i class="fas fa-angle-double-left"></i> Primera
+                                    </a>
+                                </li>
+                                <li class="page-item" id="prevPageItem">
+                                    <a class="page-link" href="#" id="prevPageBtn">
+                                        <i class="fas fa-angle-left"></i> Anterior
+                                    </a>
+                                </li>
+                                <li class="page-item active">
+                                    <span class="page-link" id="currentPageBtn">Página 1</span>
+                                </li>
+                                <li class="page-item" id="nextPageItem">
+                                    <a class="page-link" href="#" id="nextPageBtn">
+                                        Siguiente <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item" id="lastPageItem">
+                                    <a class="page-link" href="#" id="lastPageBtn">
+                                        Última <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Lista de tiendas -->
+                <div id="storeList" class="row">
+                    <!-- Se carga dinámicamente -->
+                </div>
+
+                <!-- Formulario de tienda (solo admin) -->
+                <div id="storeFormContainer" class="admin-only hidden mt-5">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 id="storeFormTitle"><i class="fas fa-plus"></i> Nueva Tienda</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="storeForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="storeArea">Área de la Tienda (m²):</label>
+                                            <input type="number" step="0.01" id="storeArea" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="itemsAvailable">Artículos Disponibles:</label>
+                                            <input type="number" id="itemsAvailable" class="form-control" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="dailyCustomerCount">Clientes Diarios:</label>
+                                            <input type="number" id="dailyCustomerCount" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="storeSales">Ventas ($):</label>
+                                            <input type="number" step="0.01" id="storeSales" class="form-control" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-success" id="submitBtn">
+                                        <i class="fas fa-save"></i> Guardar
+                                    </button>
+                                    <button type="button" class="btn btn-secondary ml-2" id="cancelBtn">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmaciones -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Acción</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="confirmModalBody">
+                    <!-- Mensaje de confirmación -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmActionBtn">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        const apiUrl = 'https://fantastic-adventure-pj7x5vg97wxvc7vr6-5000.app.github.dev/stores';
-
-        // Función para obtener las tiendas
-        function fetchStores() {
-            $.get(apiUrl, function(data) {
-                $('#storeList').empty();
-                data.forEach(store => {
-                    $('#storeList').append(`
-                        <a href="#" class="list-group-item list-group-item-action">
-                            <h5 class="mb-1">Tienda #${store.store_id}</h5>
-                            <p class="mb-1">Área: ${store.store_area} m²</p>
-                            <p class="mb-1">Artículos: ${store.items_available}</p>
-                            <p class="mb-1">Clientes diarios: ${store.daily_customer_count}</p>
-                            <p class="mb-1">Ventas: ${store.store_sales}</p>
-                            <button class="btn btn-info btn-sm editBtn" data-id="${store.store_id}">Editar</button>
-                            <button class="btn btn-danger btn-sm deleteBtn" data-id="${store.store_id}">Eliminar</button>
-                        </a>
-                    `);
-                });
-
-                // Agregar funcionalidad de Editar y Eliminar
-                $('.editBtn').on('click', function() {
-                    const storeId = $(this).data('id');
-                    getStoreDetails(storeId);
-                });
-
-                $('.deleteBtn').on('click', function() {
-                    const storeId = $(this).data('id');
-                    deleteStore(storeId);
-                });
-            });
-        }
-
-        // Función para obtener los detalles de una tienda
-        function getStoreDetails(storeId) {
-            $.get(`${apiUrl}/${storeId}`, function(store) {
-                $('#storeArea').val(store.store_area);
-                $('#itemsAvailable').val(store.items_available);
-                $('#dailyCustomerCount').val(store.daily_customer_count);
-                $('#storeSales').val(store.store_sales);
-                $('#submitBtn').text('Actualizar Tienda');
-                $('#storeForm').data('storeId', storeId);
-            });
-        }
-
-        // Función para agregar o actualizar una tienda
-        $('#storeForm').on('submit', function(e) {
-            e.preventDefault();
-            const storeData = {
-                store_area: $('#storeArea').val(),
-                items_available: $('#itemsAvailable').val(),
-                daily_customer_count: $('#dailyCustomerCount').val(),
-                store_sales: $('#storeSales').val()
-            };
-
-            const storeId = $(this).data('storeId');
-            if (storeId) {
-                // Actualizar tienda
-                $.ajax({
-                    url: `${apiUrl}/${storeId}`,
-                    type: 'PUT',
-                    contentType: 'application/json',
-                    data: JSON.stringify(storeData),
-                    success: function() {
-                        alert('Tienda actualizada correctamente');
-                        fetchStores();  // Actualizar la lista
-                        resetForm();
-                    }
-                });
-            } else {
-                // Crear tienda
-                $.ajax({
-                    url: apiUrl,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(storeData),
-                    success: function() {
-                        alert('Tienda creada correctamente');
-                        fetchStores();  // Actualizar la lista
-                        resetForm();
-                    }
-                });
-            }
-        });
-
-        // Función para eliminar una tienda
-        function deleteStore(storeId) {
-            $.ajax({
-                url: `${apiUrl}/${storeId}`,
-                type: 'DELETE',
-                success: function() {
-                    alert('Tienda eliminada correctamente');
-                    fetchStores();  // Actualizar la lista
-                }
-            });
-        }
-
-        // Función para restablecer el formulario
-        function resetForm() {
-            $('#storeArea').val('');
-            $('#itemsAvailable').val('');
-            $('#dailyCustomerCount').val('');
-            $('#storeSales').val('');
-            $('#submitBtn').text('Guardar Tienda');
-            $('#storeForm').removeData('storeId');
-        }
-
-        // Llamar a fetchStores al cargar la página
-        fetchStores();
-    </script>
+    
+    <!-- Script principal -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

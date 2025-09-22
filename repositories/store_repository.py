@@ -23,6 +23,40 @@ class StoreRepository:
             logging.error(f"Error al obtener tiendas: {e}")
             return []
 
+    def get_stores_paginated(self, page: int, per_page: int):
+        """
+        Recupera tiendas con paginación.
+        :param page: Número de página (empezando desde 1)
+        :param per_page: Número de elementos por página
+        :return: Tupla con (lista de tiendas, total de registros)
+        """
+        try:
+            # Calcular offset
+            offset = (page - 1) * per_page
+            
+            # Obtener el total de registros
+            total = self.db.query(Store).count()
+            
+            # Obtener los registros paginados
+            stores = self.db.query(Store).offset(offset).limit(per_page).all()
+            
+            return stores, total
+            
+        except Exception as e:
+            logging.error(f"Error al obtener tiendas paginadas: {e}")
+            return [], 0
+
+    def get_total_stores_count(self):
+        """
+        Obtiene el número total de tiendas en la base de datos.
+        :return: Número total de tiendas
+        """
+        try:
+            return self.db.query(Store).count()
+        except Exception as e:
+            logging.error(f"Error al contar tiendas: {e}")
+            return 0
+
     def get_store_by_id(self, store_id: int):
         """
         Busca y retorna una tienda específica según su identificador único (ID).
