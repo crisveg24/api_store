@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from services.store_service import StoreService
+from services.user_service import user_service
 from config.database import get_db_session
-from utils.auth_decorators import token_required, admin_required, optional_auth
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -11,9 +12,68 @@ store_bp = Blueprint('store_bp', __name__, url_prefix='/api')
 # Instancia del servicio
 service = StoreService(get_db_session())
 
+# ============================================================================
+# FUNCIONES AUXILIARES
+# ============================================================================
+
+def get_current_user():
+    """Helper para obtener el usuario actual desde el JWT"""
+    user_id = get_jwt_identity()
+    if user_id:
+        return user_service.get_user_by_id(int(user_id))
+    return None
+
+def get_optional_current_user():
+    """Helper para obtener el usuario actual de forma opcional"""
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            return user_service.get_user_by_id(int(user_id))
+    except:
+        pass
+    return None
+
+def check_admin_permissions(current_user):
+    """Helper para verificar permisos de administrador"""
+    if not current_user or not current_user.is_admin():
+        return jsonify({
+            'success': False,
+            'message': 'Se requieren permisos de administrador',
+            'error': 'INSUFFICIENT_PERMISSIONS'
+        }), 403
+    return None
+
+def get_current_user():
+    """Helper para obtener el usuario actual desde el JWT"""
+    user_id = get_jwt_identity()
+    if user_id:
+        return user_service.get_user_by_id(int(user_id))
+    return None
+
+def get_optional_current_user():
+    """Helper para obtener el usuario actual de forma opcional"""
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            return user_service.get_user_by_id(int(user_id))
+    except:
+        pass
+    return None
+
+def check_admin_permissions(current_user):
+    """Helper para verificar permisos de administrador"""
+    if not current_user or not current_user.is_admin():
+        return jsonify({
+            'success': False,
+            'message': 'Se requieren permisos de administrador',
+            'error': 'INSUFFICIENT_PERMISSIONS'
+        }), 403
+    return None
+
 @store_bp.route('/stores', methods=['GET'])
-@optional_auth
-def get_stores(current_user=None):
+def get_stores():
     """
     GET /stores
     Recupera y retorna tiendas con paginación.
@@ -24,6 +84,9 @@ def get_stores(current_user=None):
     - per_page: elementos por página (por defecto 10, máximo 100)
     """
     try:
+        # Obtener usuario opcional
+        current_user = get_optional_current_user()
+        
         # Obtener parámetros de paginación desde la query string
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
@@ -63,9 +126,8 @@ def get_stores(current_user=None):
         }), 500
 
 @store_bp.route('/stores', methods=['POST'])
-@token_required
-@admin_required
-def create_store(current_user):
+@jwt_required()
+def create_store():
     """
     POST /stores
     Crear una nueva tienda (solo administradores).
@@ -79,6 +141,14 @@ def create_store(current_user):
     }
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         data = request.get_json()
         
         if not data:
@@ -139,14 +209,16 @@ def create_store(current_user):
         }), 500
 
 @store_bp.route('/stores/<int:store_id>', methods=['GET'])
-@optional_auth
-def get_store(current_user=None, store_id=None):
+def get_store(store_id):
     """
     GET /stores/{store_id}
     Obtener una tienda específica.
     Endpoint público, pero muestra información adicional si el usuario está autenticado.
     """
     try:
+        # Obtener usuario opcional
+        current_user = get_optional_current_user()
+        
         store = service.obtener_tienda(store_id)
         
         if store:
@@ -187,9 +259,8 @@ def get_store(current_user=None, store_id=None):
         }), 500
 
 @store_bp.route('/stores/<int:store_id>', methods=['PUT'])
-@token_required
-@admin_required
-def update_store(current_user, store_id):
+@jwt_required()
+def update_store(store_id):
     """
     PUT /stores/{store_id}
     Actualizar una tienda existente (solo administradores).
@@ -203,6 +274,14 @@ def update_store(current_user, store_id):
     }
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         data = request.get_json()
         
         if not data:
@@ -259,14 +338,21 @@ def update_store(current_user, store_id):
         }), 500
 
 @store_bp.route('/stores/<int:store_id>', methods=['DELETE'])
-@token_required
-@admin_required
-def delete_store(current_user, store_id):
+@jwt_required()
+def delete_store(store_id):
     """
     DELETE /stores/{store_id}
     Eliminar una tienda (solo administradores).
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         success = service.eliminar_tienda(store_id)
         
         if success:
@@ -295,14 +381,21 @@ def delete_store(current_user, store_id):
 # ============================================================================
 
 @store_bp.route('/stores/stats', methods=['GET'])
-@token_required
-@admin_required
-def get_store_stats(current_user):
+@jwt_required()
+def get_store_stats():
     """
     GET /stores/stats
     Obtener estadísticas de las tiendas (solo administradores).
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         # Obtener estadísticas básicas del servicio
         stats = service.obtener_estadisticas()
         

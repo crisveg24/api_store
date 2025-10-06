@@ -8,11 +8,11 @@ Este módulo maneja los endpoints relacionados con usuarios:
 - Administración de usuarios (solo admins)
 """
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from functools import wraps
 import logging
 from services.user_service import user_service
 from models.user_model import UserRole
-from utils.auth_utils import AuthUtils
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,60 +20,25 @@ logging.basicConfig(level=logging.INFO)
 user_bp = Blueprint('users', __name__, url_prefix='/api/users')
 
 # ============================================================================
-# DECORADORES DE AUTENTICACIÓN
+# FUNCIONES AUXILIARES
 # ============================================================================
 
-def token_required(f):
-    """
-    Decorador para requerir autenticación con token JWT.
-    """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-        
-        # Obtener token del header Authorization
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            token = AuthUtils.extract_token_from_header(auth_header)
-        
-        if not token:
-            return jsonify({
-                'success': False,
-                'message': 'Token de acceso requerido',
-                'error': 'MISSING_TOKEN'
-            }), 401
-        
-        # Validar token y obtener usuario
-        is_valid, message, current_user = user_service.validate_token_and_get_user(token)
-        
-        if not is_valid:
-            return jsonify({
-                'success': False,
-                'message': message,
-                'error': 'INVALID_TOKEN'
-            }), 401
-        
-        # Pasar el usuario actual a la función
-        return f(current_user, *args, **kwargs)
-    
-    return decorated
+def get_current_user():
+    """Helper para obtener el usuario actual desde el JWT"""
+    user_id = get_jwt_identity()
+    if user_id:
+        return user_service.get_user_by_id(int(user_id))
+    return None
 
-def admin_required(f):
-    """
-    Decorador para requerir permisos de administrador.
-    """
-    @wraps(f)
-    def decorated(current_user, *args, **kwargs):
-        if not current_user.is_admin():
-            return jsonify({
-                'success': False,
-                'message': 'Se requieren permisos de administrador',
-                'error': 'INSUFFICIENT_PERMISSIONS'
-            }), 403
-        
-        return f(current_user, *args, **kwargs)
-    
-    return decorated
+def check_admin_permissions(current_user):
+    """Helper para verificar permisos de administrador"""
+    if not current_user or not current_user.is_admin():
+        return jsonify({
+            'success': False,
+            'message': 'Se requieren permisos de administrador',
+            'error': 'INSUFFICIENT_PERMISSIONS'
+        }), 403
+    return None
 
 # ============================================================================
 # ENDPOINTS PÚBLICOS (SIN AUTENTICACIÓN)
@@ -208,12 +173,20 @@ def login():
 # ============================================================================
 
 @user_bp.route('/profile', methods=['GET'])
-@token_required
-def get_profile(current_user):
+@jwt_required()
+def get_profile():
     """
     Obtener el perfil del usuario autenticado.
     """
     try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({
+                'success': False,
+                'message': 'Usuario no encontrado',
+                'error': 'USER_NOT_FOUND'
+            }), 404
+        
         success, message, user_data = user_service.get_user_profile(current_user.user_id)
         
         if success:
@@ -238,8 +211,8 @@ def get_profile(current_user):
         }), 500
 
 @user_bp.route('/profile', methods=['PUT'])
-@token_required
-def update_profile(current_user):
+@jwt_required()
+def update_profile():
     """
     Actualizar el perfil del usuario autenticado.
     
@@ -251,6 +224,14 @@ def update_profile(current_user):
     }
     """
     try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({
+                'success': False,
+                'message': 'Usuario no encontrado',
+                'error': 'USER_NOT_FOUND'
+            }), 404
+        
         data = request.get_json()
         
         if not data:
@@ -299,16 +280,20 @@ def update_profile(current_user):
 # ============================================================================
 
 @user_bp.route('/', methods=['GET'])
-@token_required
-@admin_required
-def get_all_users(current_user):
+@jwt_required()
+def get_all_users():
     """
-    Obtener todos los usuarios (solo admins).
+    Obtener todos los usuarios (solo administradores).
     
     Query params:
     - include_inactive: true/false (por defecto false)
     """
     try:
+        current_user = get_current_user()
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         # Obtener parámetro opcional
         include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
         
@@ -339,10 +324,17 @@ def get_all_users(current_user):
             'error': 'INTERNAL_ERROR'
         }), 500
 
-@user_bp.route('/<int:user_id>', methods=['PUT'])
-@token_required
-@admin_required
-def update_user(current_user, user_id):
+# ============================================================================
+# ENDPOINTS DE ADMINISTRACIÓN (TEMPORALMENTE DESHABILITADOS - PENDIENTE ACTUALIZACIÓN)
+# ============================================================================
+
+# TODO: Actualizar estos endpoints para usar Flask-JWT-Extended
+
+# @user_bp.route('/<int:user_id>', methods=['PUT'])
+# @jwt_required()
+# def update_user(user_id):
+
+# ... resto de endpoints de admin comentados temporalmente ...
     """
     Actualizar información de un usuario (solo admins).
     

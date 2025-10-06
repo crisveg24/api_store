@@ -76,7 +76,7 @@ class AuthConfig:
             password (str): Contraseña a validar
             
         Returns:
-            tuple: (is_valid: bool, errors: list)
+            dict: {'is_valid': bool, 'errors': list}
         """
         errors = []
         
@@ -100,7 +100,10 @@ class AuthConfig:
         if cls.REQUIRE_SPECIAL_CHARS and not any(c in cls.SPECIAL_CHARS for c in password):
             errors.append(f"La contraseña debe contener al menos uno de estos caracteres especiales: {cls.SPECIAL_CHARS}")
         
-        return len(errors) == 0, errors
+        return {
+            'is_valid': len(errors) == 0,
+            'errors': errors
+        }
     
     @classmethod
     def validate_username(cls, username):
@@ -111,7 +114,7 @@ class AuthConfig:
             username (str): Nombre de usuario a validar
             
         Returns:
-            tuple: (is_valid: bool, errors: list)
+            dict: {'is_valid': bool, 'errors': list}
         """
         errors = []
         
@@ -127,10 +130,41 @@ class AuthConfig:
             errors.append("El nombre de usuario solo puede contener letras, números, guiones (-) y guiones bajos (_)")
         
         # No puede empezar con número
-        if username[0].isdigit():
+        if username and username[0].isdigit():
             errors.append("El nombre de usuario no puede empezar con un número")
         
-        return len(errors) == 0, errors
+        return {
+            'is_valid': len(errors) == 0,
+            'errors': errors
+        }
+    
+    @classmethod
+    def is_valid_email(cls, email):
+        """
+        Valida el formato de un email.
+        
+        Args:
+            email (str): Email a validar
+            
+        Returns:
+            bool: True si el email es válido, False en caso contrario
+        """
+        import re
+        
+        # Patrón básico para validar email
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        
+        if not email:
+            return False
+        
+        return bool(re.match(email_pattern, email))
+    
+    @classmethod
+    def validate_password(cls, password):
+        """
+        Alias para validate_password_strength para compatibilidad.
+        """
+        return cls.validate_password_strength(password)
 
 # Configuraciones específicas para desarrollo y producción
 class DevelopmentConfig(AuthConfig):
@@ -148,9 +182,6 @@ class ProductionConfig(AuthConfig):
 ENVIRONMENT = os.getenv('FLASK_ENV', 'development')
 
 if ENVIRONMENT == 'production':
-    config = ProductionConfig()
+    auth_config = ProductionConfig
 else:
-    config = DevelopmentConfig()
-
-# Exportar la configuración seleccionada
-auth_config = config
+    auth_config = DevelopmentConfig

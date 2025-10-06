@@ -445,6 +445,122 @@ class UserRepository:
         finally:
             if session:
                 session.close()
+    
+    def get_all_users(self, include_inactive: bool = False) -> List[User]:
+        """
+        Obtener todos los usuarios del sistema.
+        
+        Args:
+            include_inactive (bool): Si incluir usuarios inactivos
+            
+        Returns:
+            List[User]: Lista de usuarios
+        """
+        session = None
+        try:
+            session = get_session()
+            
+            query = session.query(User)
+            if not include_inactive:
+                query = query.filter(User.is_active == True)
+            
+            users = query.order_by(User.created_at.desc()).all()
+            
+            logging.info(f"Se obtuvieron {len(users)} usuarios (include_inactive={include_inactive})")
+            return users
+            
+        except SQLAlchemyError as e:
+            logging.error(f"Error de base de datos al obtener usuarios: {e}")
+            return []
+        except Exception as e:
+            logging.error(f"Error inesperado al obtener usuarios: {e}")
+            return []
+        finally:
+            if session:
+                session.close()
+    
+    def update_user_role(self, user_id: int, new_role: UserRole) -> bool:
+        """
+        Actualizar el rol de un usuario.
+        
+        Args:
+            user_id (int): ID del usuario
+            new_role (UserRole): Nuevo rol
+            
+        Returns:
+            bool: True si se actualizó exitosamente
+        """
+        session = None
+        try:
+            session = get_session()
+            
+            user = session.query(User).filter(User.user_id == user_id).first()
+            if not user:
+                logging.warning(f"Usuario con ID {user_id} no encontrado")
+                return False
+            
+            old_role = user.role
+            user.role = new_role
+            session.commit()
+            
+            logging.info(f"Rol del usuario {user.username} cambiado de {old_role.value} a {new_role.value}")
+            return True
+            
+        except SQLAlchemyError as e:
+            if session:
+                session.rollback()
+            logging.error(f"Error de base de datos al actualizar rol: {e}")
+            return False
+        except Exception as e:
+            if session:
+                session.rollback()
+            logging.error(f"Error inesperado al actualizar rol: {e}")
+            return False
+        finally:
+            if session:
+                session.close()
+    
+    def update_user_status(self, user_id: int, is_active: bool) -> bool:
+        """
+        Actualizar el estado activo/inactivo de un usuario.
+        
+        Args:
+            user_id (int): ID del usuario
+            is_active (bool): Nuevo estado
+            
+        Returns:
+            bool: True si se actualizó exitosamente
+        """
+        session = None
+        try:
+            session = get_session()
+            
+            user = session.query(User).filter(User.user_id == user_id).first()
+            if not user:
+                logging.warning(f"Usuario con ID {user_id} no encontrado")
+                return False
+            
+            old_status = user.is_active
+            user.is_active = is_active
+            session.commit()
+            
+            status_text = "activado" if is_active else "desactivado"
+            logging.info(f"Usuario {user.username} {status_text} (antes: {'activo' if old_status else 'inactivo'})")
+            return True
+            
+        except SQLAlchemyError as e:
+            if session:
+                session.rollback()
+            logging.error(f"Error de base de datos al actualizar estado: {e}")
+            return False
+        except Exception as e:
+            if session:
+                session.rollback()
+            logging.error(f"Error inesperado al actualizar estado: {e}")
+            return False
+        finally:
+            if session:
+                session.close()
 
 # Instancia global del repositorio
 user_repository = UserRepository()

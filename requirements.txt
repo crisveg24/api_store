@@ -14,3 +14,5 @@ pandas                 # Lector para el csv
 PyJWT==2.8.0          # JSON Web Tokens para autenticación
 bcrypt==4.0.1         # Hash seguro de contraseñas
 python-jose[cryptography]==3.3.0  # JWT con validación criptográfica
+Flask-JWT-Extended==4.6.0  # Extensión de Flask para manejo simplificado de JWT
+Werkzeug==3.0.3       # Librería para hashing de contraseñas (ya incluida con Flask)

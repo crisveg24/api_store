@@ -11,9 +11,10 @@ Este módulo contiene la lógica de negocio para la gestión de usuarios:
 from typing import Optional, Dict, Any, List, Tuple
 import logging
 from datetime import datetime
+from flask_jwt_extended import create_access_token
 from repositories.user_repository import user_repository
 from models.user_model import User, UserRole
-from utils.auth_utils import AuthUtils, hash_password, verify_password, create_access_token
+from utils.auth_utils import hash_password, verify_password
 from config.auth_config import auth_config
 
 logging.basicConfig(level=logging.INFO)
@@ -26,7 +27,6 @@ class UserService:
     def __init__(self):
         """Inicializar el servicio de usuarios"""
         self.user_repository = user_repository
-        self.auth_utils = AuthUtils
     
     def register_user(self, username: str, email: str, password: str, 
                      role: UserRole = UserRole.USER) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
@@ -114,8 +114,8 @@ class UserService:
             # Actualizar último login
             self.user_repository.update_last_login(user.user_id)
             
-            # Crear token JWT
-            token = create_access_token(user)
+            # Crear token JWT usando Flask-JWT-Extended
+            token = create_access_token(identity=str(user.user_id))
             
             # Preparar datos de respuesta
             user_data = {
@@ -576,11 +576,166 @@ class UserService:
             return False, "Email inválido"
         
         # Validar contraseña
-        password_validation = auth_config.validate_password(password)
+        password_validation = auth_config.validate_password_strength(password)
         if not password_validation['is_valid']:
             return False, f"Contraseña inválida: {', '.join(password_validation['errors'])}"
         
         return True, "Datos válidos"
+    
+    def get_all_users(self, requesting_user_id: int, include_inactive: bool = False) -> Tuple[bool, str, Optional[List[Dict[str, Any]]]]:
+        """
+        Obtener todos los usuarios (solo para administradores).
+        
+        Args:
+            requesting_user_id (int): ID del usuario que hace la petición
+            include_inactive (bool): Si incluir usuarios inactivos
+            
+        Returns:
+            Tuple[bool, str, Optional[List[Dict]]]: (éxito, mensaje, lista_usuarios)
+        """
+        try:
+            # Verificar que el usuario que hace la petición sea admin
+            requesting_user = self.user_repository.get_user_by_id(requesting_user_id)
+            if not requesting_user or not requesting_user.is_admin():
+                return False, "Se requieren permisos de administrador", None
+            
+            users = self.user_repository.get_all_users(include_inactive=include_inactive)
+            
+            users_data = []
+            for user in users:
+                user_data = {
+                    "user_id": user.user_id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role.value,
+                    "is_active": user.is_active,
+                    "created_at": user.created_at.isoformat() if user.created_at else None,
+                    "last_login": user.last_login.isoformat() if user.last_login else None
+                }
+                users_data.append(user_data)
+            
+            return True, f"Se encontraron {len(users_data)} usuarios", users_data
+            
+        except Exception as e:
+            logging.error(f"Error al obtener usuarios: {e}")
+            return False, "Error interno del servidor", None
+    
+    def change_user_role(self, user_id: int, new_role: UserRole, admin_user_id: int) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """
+        Cambiar el rol de un usuario (solo para administradores).
+        
+        Args:
+            user_id (int): ID del usuario a modificar
+            new_role (UserRole): Nuevo rol
+            admin_user_id (int): ID del administrador que hace el cambio
+            
+        Returns:
+            Tuple[bool, str, Optional[Dict]]: (éxito, mensaje, datos_usuario)
+        """
+        try:
+            # Verificar que el usuario que hace la petición sea admin
+            admin_user = self.user_repository.get_user_by_id(admin_user_id)
+            if not admin_user or not admin_user.is_admin():
+                return False, "Se requieren permisos de administrador", None
+            
+            # Buscar el usuario a modificar
+            target_user = self.user_repository.get_user_by_id(user_id)
+            if not target_user:
+                return False, "Usuario no encontrado", None
+            
+            # No permitir que un admin cambie su propio rol
+            if user_id == admin_user_id:
+                return False, "No puedes cambiar tu propio rol", None
+            
+            # Actualizar el rol
+            success = self.user_repository.update_user_role(user_id, new_role)
+            if not success:
+                return False, "Error al actualizar el rol del usuario", None
+            
+            # Obtener datos actualizados
+            updated_user = self.user_repository.get_user_by_id(user_id)
+            user_data = {
+                "user_id": updated_user.user_id,
+                "username": updated_user.username,
+                "email": updated_user.email,
+                "role": updated_user.role.value,
+                "is_active": updated_user.is_active,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            logging.info(f"Admin {admin_user.username} cambió el rol de {target_user.username} a {new_role.value}")
+            return True, f"Rol cambiado a {new_role.value} exitosamente", user_data
+            
+        except Exception as e:
+            logging.error(f"Error al cambiar rol de usuario: {e}")
+            return False, "Error interno del servidor", None
+    
+    def toggle_user_status(self, user_id: int, admin_user_id: int) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """
+        Activar/desactivar un usuario (solo para administradores).
+        
+        Args:
+            user_id (int): ID del usuario a modificar
+            admin_user_id (int): ID del administrador que hace el cambio
+            
+        Returns:
+            Tuple[bool, str, Optional[Dict]]: (éxito, mensaje, datos_usuario)
+        """
+        try:
+            # Verificar que el usuario que hace la petición sea admin
+            admin_user = self.user_repository.get_user_by_id(admin_user_id)
+            if not admin_user or not admin_user.is_admin():
+                return False, "Se requieren permisos de administrador", None
+            
+            # Buscar el usuario a modificar
+            target_user = self.user_repository.get_user_by_id(user_id)
+            if not target_user:
+                return False, "Usuario no encontrado", None
+            
+            # No permitir que un admin se desactive a sí mismo
+            if user_id == admin_user_id:
+                return False, "No puedes desactivar tu propia cuenta", None
+            
+            # Cambiar el estado
+            new_status = not target_user.is_active
+            success = self.user_repository.update_user_status(user_id, new_status)
+            if not success:
+                return False, "Error al actualizar el estado del usuario", None
+            
+            # Obtener datos actualizados
+            updated_user = self.user_repository.get_user_by_id(user_id)
+            user_data = {
+                "user_id": updated_user.user_id,
+                "username": updated_user.username,
+                "email": updated_user.email,
+                "role": updated_user.role.value,
+                "is_active": updated_user.is_active,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            status_text = "activado" if new_status else "desactivado"
+            logging.info(f"Admin {admin_user.username} {status_text} al usuario {target_user.username}")
+            return True, f"Usuario {status_text} exitosamente", user_data
+            
+        except Exception as e:
+            logging.error(f"Error al cambiar estado de usuario: {e}")
+            return False, "Error interno del servidor", None
+    
+    def get_user_by_id(self, user_id: int) -> Optional[User]:
+        """
+        Obtener un usuario por su ID.
+        
+        Args:
+            user_id (int): ID del usuario
+            
+        Returns:
+            User: Objeto usuario o None si no existe
+        """
+        try:
+            return self.user_repository.get_user_by_id(user_id)
+        except Exception as e:
+            logging.error(f"Error al obtener usuario por ID: {e}")
+            return None
 
 # Instancia global del servicio
 user_service = UserService()

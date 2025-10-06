@@ -1,7 +1,12 @@
 from flask import Flask, render_template, jsonify
+from flask_jwt_extended import JWTManager
 from controllers.store_controller import store_bp  # Importamos el blueprint para las rutas de Store
-from controllers.user_controller import user_bp   # Importamos el blueprint para las rutas de usuarios
+from controllers.user_controller_demo import user_bp   # Importamos el blueprint para las rutas de usuarios (versión demo)
 from config.database import Base, engine, create_tables, initialize_data
+from config.jwt_config import (
+    JWT_SECRET_KEY, JWT_TOKEN_LOCATION, JWT_ACCESS_TOKEN_EXPIRES,
+    JWT_HEADER_NAME, JWT_HEADER_TYPE, JWT_ERROR_MESSAGE_KEY
+)
 import logging
 
 # Configurar logging
@@ -13,6 +18,17 @@ app = Flask(__name__)
 
 # Configuración de la aplicación
 app.config['SECRET_KEY'] = 'tu-clave-secreta-aqui'  # Cambia esto en producción
+
+# Configuración JWT
+app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
+app.config['JWT_TOKEN_LOCATION'] = JWT_TOKEN_LOCATION
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = JWT_ACCESS_TOKEN_EXPIRES
+app.config['JWT_HEADER_NAME'] = JWT_HEADER_NAME
+app.config['JWT_HEADER_TYPE'] = JWT_HEADER_TYPE
+app.config['JWT_ERROR_MESSAGE_KEY'] = JWT_ERROR_MESSAGE_KEY
+
+# Inicializar JWT Manager
+jwt = JWTManager(app)
 
 def initialize_app():
     """
@@ -88,6 +104,31 @@ def internal_error(error):
         'error': 'INTERNAL_ERROR'
     }), 500
 
+# Manejadores de errores JWT
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({
+        'success': False,
+        'message': 'Token ha expirado',
+        'error': 'TOKEN_EXPIRED'
+    }), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({
+        'success': False,
+        'message': 'Token JWT inválido',
+        'error': 'INVALID_TOKEN'
+    }), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({
+        'success': False,
+        'message': 'Token de autorización requerido',
+        'error': 'AUTHORIZATION_REQUIRED'
+    }), 401
+
 if __name__ == "__main__":
     # Inicializar la aplicación
     initialize_app()
@@ -100,6 +141,11 @@ if __name__ == "__main__":
     logger.info("  - Users: http://localhost:5000/api/users")
     logger.info("  - Registro: http://localhost:5000/api/users/register")
     logger.info("  - Login: http://localhost:5000/api/users/login")
+    logger.info("  - Perfil: http://localhost:5000/api/users/profile")
+    logger.info("  - Verificar Token: http://localhost:5000/api/users/verify-token")
+    logger.info("  - Gestión Usuarios (Admin): http://localhost:5000/api/users/")
+    logger.info("  - Cambiar Rol (Admin): PUT /api/users/{id}/role")
+    logger.info("  - Activar/Desactivar (Admin): PUT /api/users/{id}/toggle-status")
     
     # Ejecutar la aplicación con el modo debug activado
     app.run(debug=True, host='0.0.0.0', port=5000)
