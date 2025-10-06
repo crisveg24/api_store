@@ -77,20 +77,26 @@ def check_admin_permissions(current_user):
 def get_stores():
     """
     GET /stores
-    Recupera y retorna tiendas con paginación.
+    Recupera y retorna tiendas con paginación, búsqueda y ordenamiento.
     Requiere autenticación JWT.
     
     Parámetros de consulta:
     - page: número de página (por defecto 1)
     - per_page: elementos por página (por defecto 10, máximo 100)
+    - search: término de búsqueda (opcional)
+    - sort_by: campo por el cual ordenar (opcional)
+    - sort_order: orden ascendente o descendente ('asc' o 'desc', por defecto 'asc')
     """
     try:
         # Obtener usuario actual (requerido)
         current_user = get_current_user()
         
-        # Obtener parámetros de paginación desde la query string
+        # Obtener parámetros de paginación, búsqueda y ordenamiento desde la query string
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
+        search = request.args.get('search', None, type=str)
+        sort_by = request.args.get('sort_by', None, type=str)
+        sort_order = request.args.get('sort_order', 'asc', type=str)
         
         # Validar parámetros
         if page < 1:
@@ -99,9 +105,11 @@ def get_stores():
             per_page = 10
         if per_page > 100:  # Limitar el máximo de elementos por página
             per_page = 100
+        if sort_order not in ['asc', 'desc']:
+            sort_order = 'asc'
         
-        # Obtener datos paginados
-        result = service.listar_tiendas_paginadas(page, per_page)
+        # Obtener datos paginados con búsqueda y ordenamiento
+        result = service.listar_tiendas_paginadas(page, per_page, search, sort_by, sort_order)
         
         # Agregar información del usuario autenticado
         result['user_info'] = {

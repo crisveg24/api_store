@@ -1,5 +1,6 @@
 from models.store_model import Store
 from sqlalchemy.orm import Session
+from sqlalchemy import String, func
 import logging
 
 class StoreService:
@@ -20,22 +21,48 @@ class StoreService:
             logging.error(f"Error al obtener tiendas: {e}")
             return []
 
-    def listar_tiendas_paginadas(self, page, per_page):
+    def listar_tiendas_paginadas(self, page, per_page, search=None, sort_by=None, sort_order='asc'):
         """
-        Lista tiendas con paginación.
+        Lista tiendas con paginación, búsqueda y ordenamiento.
         :param page: Número de página (empezando desde 1).
         :param per_page: Número de elementos por página.
+        :param search: Término de búsqueda (opcional).
+        :param sort_by: Campo por el cual ordenar (opcional).
+        :param sort_order: Orden ascendente o descendente ('asc' o 'desc').
         :return: Diccionario con datos paginados y metadatos.
         """
         try:
             # Calcular offset
             offset = (page - 1) * per_page
             
-            # Obtener el total de registros
-            total = self.session.query(Store).count()
+            # Construir query base
+            query = self.session.query(Store)
+            
+            # Aplicar búsqueda si se proporciona
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    (Store.store_id.cast(String).like(search_term)) |
+                    (Store.store_area.cast(String).like(search_term)) |
+                    (Store.items_available.cast(String).like(search_term)) |
+                    (Store.daily_customer_count.cast(String).like(search_term)) |
+                    (Store.store_sales.cast(String).like(search_term))
+                )
+            
+            # Aplicar ordenamiento si se proporciona
+            if sort_by:
+                sort_column = getattr(Store, sort_by, None)
+                if sort_column is not None:
+                    if sort_order == 'desc':
+                        query = query.order_by(sort_column.desc())
+                    else:
+                        query = query.order_by(sort_column.asc())
+            
+            # Obtener el total de registros (después de aplicar filtros)
+            total = query.count()
             
             # Obtener los registros paginados
-            stores = self.session.query(Store).offset(offset).limit(per_page).all()
+            stores = query.offset(offset).limit(per_page).all()
             
             # Calcular metadatos de paginación
             total_pages = (total + per_page - 1) // per_page  # Ceiling division
