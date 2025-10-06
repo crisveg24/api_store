@@ -73,19 +73,20 @@ def check_admin_permissions(current_user):
     return None
 
 @store_bp.route('/stores', methods=['GET'])
+@jwt_required()
 def get_stores():
     """
     GET /stores
     Recupera y retorna tiendas con paginación.
-    Endpoint público, pero muestra información adicional si el usuario está autenticado.
+    Requiere autenticación JWT.
     
     Parámetros de consulta:
     - page: número de página (por defecto 1)
     - per_page: elementos por página (por defecto 10, máximo 100)
     """
     try:
-        # Obtener usuario opcional
-        current_user = get_optional_current_user()
+        # Obtener usuario actual (requerido)
+        current_user = get_current_user()
         
         # Obtener parámetros de paginación desde la query string
         page = request.args.get('page', 1, type=int)
@@ -102,18 +103,13 @@ def get_stores():
         # Obtener datos paginados
         result = service.listar_tiendas_paginadas(page, per_page)
         
-        # Agregar información de autenticación si aplica
-        if current_user:
-            result['user_info'] = {
-                'authenticated': True,
-                'username': current_user.username,
-                'role': current_user.role.value,
-                'is_admin': current_user.is_admin()
-            }
-        else:
-            result['user_info'] = {
-                'authenticated': False
-            }
+        # Agregar información del usuario autenticado
+        result['user_info'] = {
+            'authenticated': True,
+            'username': current_user.username,
+            'role': current_user.role.value,
+            'is_admin': current_user.is_admin()
+        }
         
         return jsonify(result), 200
         
@@ -209,34 +205,29 @@ def create_store():
         }), 500
 
 @store_bp.route('/stores/<int:store_id>', methods=['GET'])
+@jwt_required()
 def get_store(store_id):
     """
     GET /stores/{store_id}
     Obtener una tienda específica.
-    Endpoint público, pero muestra información adicional si el usuario está autenticado.
+    Requiere autenticación JWT.
     """
     try:
-        # Obtener usuario opcional
-        current_user = get_optional_current_user()
+        # Obtener usuario actual (requerido)
+        current_user = get_current_user()
         
         store = service.obtener_tienda(store_id)
         
         if store:
             store_data = store.to_dict()
             
-            # Agregar información de autenticación si aplica
-            if current_user:
-                store_data['user_info'] = {
-                    'authenticated': True,
-                    'can_edit': current_user.is_admin(),
-                    'username': current_user.username,
-                    'role': current_user.role.value
-                }
-            else:
-                store_data['user_info'] = {
-                    'authenticated': False,
-                    'can_edit': False
-                }
+            # Agregar información del usuario autenticado
+            store_data['user_info'] = {
+                'authenticated': True,
+                'can_edit': current_user.is_admin(),
+                'username': current_user.username,
+                'role': current_user.role.value
+            }
             
             return jsonify({
                 'success': True,
