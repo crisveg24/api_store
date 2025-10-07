@@ -13,22 +13,65 @@ logging.basicConfig(level=logging.INFO)
 # Cargar variables de entorno desde .env
 load_dotenv()
 
-# URI de conexión para SQLite
-SQLITE_URI = 'sqlite:///stores.db'
+# Configuración de base de datos
+# Prioridad: DATABASE_URL (Railway) > Variables individuales > SQLite (desarrollo)
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+# Railway a veces usa 'postgres://' pero SQLAlchemy necesita 'postgresql://'
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+# Si no hay DATABASE_URL, construir desde variables individuales o usar SQLite
+if not DATABASE_URL:
+    DB_TYPE = os.getenv('DB_TYPE', 'sqlite')  # sqlite, postgresql, mysql
+    
+    if DB_TYPE == 'postgresql':
+        DB_USER = os.getenv('PGUSER', 'postgres')
+        DB_PASSWORD = os.getenv('PGPASSWORD', '')
+        DB_HOST = os.getenv('PGHOST', 'localhost')
+        DB_PORT = os.getenv('PGPORT', '5432')
+        DB_NAME = os.getenv('PGDATABASE', 'storesdb')
+        DATABASE_URL = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    elif DB_TYPE == 'mysql':
+        DB_USER = os.getenv('DB_USER', 'root')
+        DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+        DB_HOST = os.getenv('DB_HOST', 'localhost')
+        DB_PORT = os.getenv('DB_PORT', '3306')
+        DB_NAME = os.getenv('DB_NAME', 'storesdb')
+        DATABASE_URL = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    else:  # SQLite por defecto para desarrollo local
+        DATABASE_URL = 'sqlite:///stores.db'
+
+logging.info(f"Configuración de base de datos: {DATABASE_URL.split('@')[0] if '@' in DATABASE_URL else 'SQLite local'}")
 
 def get_engine():
     """
-    Intenta crear una conexión con SQLite.
+    Intenta crear una conexión con la base de datos configurada.
     """
     try:
-        engine = create_engine(SQLITE_URI, echo=False)  # Cambiado a False para menos logs
+        # Configuración adicional para PostgreSQL
+        connect_args = {}
+        if 'sqlite' in DATABASE_URL:
+            connect_args = {'check_same_thread': False}
+        
+        engine = create_engine(
+            DATABASE_URL, 
+            echo=False,
+            connect_args=connect_args,
+            pool_pre_ping=True,  # Verificar conexiones antes de usarlas
+            pool_recycle=3600    # Reciclar conexiones cada hora
+        )
+        
         # Probar conexión
         conn = engine.connect()
         conn.close()
-        logging.info('Conexión a SQLite exitosa.')
+        
+        db_type = 'PostgreSQL' if 'postgresql' in DATABASE_URL else \
+                  'MySQL' if 'mysql' in DATABASE_URL else 'SQLite'
+        logging.info(f'✅ Conexión a {db_type} exitosa.')
         return engine
     except OperationalError as e:
-        logging.error(f'No se pudo conectar a SQLite: {e}')
+        logging.error(f'❌ No se pudo conectar a la base de datos: {e}')
         raise
 
 # Crear el motor de conexión

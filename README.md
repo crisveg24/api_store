@@ -38,12 +38,20 @@ Este proyecto es una API completa para la gestión de tiendas con sistema de aut
 
 ### 🎨 Interfaz Web Administrativa
 - **Dashboard responsivo** con diseño moderno
-- **Sistema de pestañas** (Tiendas, Usuarios, Estadísticas)
+- **Sistema de pestañas** ✅ Navegación fluida (Tiendas, Usuarios, Estadísticas)
 - **Tarjetas interactivas** con acciones rápidas
 - **Modales** para crear y editar tiendas
 - **Iconos** con Lucide Icons
 - **Notificaciones** visuales de operaciones
 - **Tema oscuro** profesional
+- **Exportación a CSV** ✅ Descarga de datos filtrados
+
+### 🚀 Deployment y Producción
+- **Multi-Database Support**: SQLite (desarrollo) y PostgreSQL (producción)
+- **Railway Ready**: Configuración lista para deploy en Railway
+- **Gunicorn**: Servidor WSGI para producción
+- **Variables de Entorno**: Gestión segura con templates
+- **Documentación Completa**: Guías detalladas en carpeta `railway/`
 
 ## 📁 Estructura del Proyecto
 
@@ -56,7 +64,14 @@ api_store/
 ├── 📝 README.md                   # Documentación completa
 ├── 🚫 .gitignore                  # Archivos excluidos del repositorio
 │
-├── 📊 models/                     # Modelos de datos
+├── � railway/                    # 🆕 Configuración para Railway
+│   ├── .env.example               # Template de variables de entorno
+│   ├── Procfile                   # Comando de inicio para Railway
+│   ├── railway.json               # Configuración de build y deploy
+│   ├── DEPLOYMENT.md              # Guía completa de despliegue
+│   └── README.md                  # Documentación de la carpeta
+│
+├── �📊 models/                     # Modelos de datos
 │   ├── store_model.py             # Modelo de tienda con validaciones
 │   └── user_model.py              # Modelo de usuario con roles y estado
 │
@@ -73,7 +88,7 @@ api_store/
 │   └── user_controller.py         # Endpoints de usuarios y autenticación
 │
 ├── ⚙️ config/                     # Configuraciones
-│   ├── database.py                # Configuración de BD SQLAlchemy
+│   ├── database.py                # 🆕 Multi-DB: SQLite + PostgreSQL support
 │   ├── auth_config.py             # Configuración de autenticación
 │   ├── jwt_config.py              # Configuración de JWT
 │   └── files/                     # Archivos de datos
@@ -93,7 +108,9 @@ api_store/
 
 ## 🛠️ Instalación y Configuración
 
-### 1. Crear y Activar Entorno Virtual
+### Opción A: Desarrollo Local con SQLite (Recomendado para empezar)
+
+#### 1. Crear y Activar Entorno Virtual
 
 ```bash
 # Crear entorno virtual
@@ -106,13 +123,13 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2. Instalar Dependencias
+#### 2. Instalar Dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Crear Usuario Administrador
+#### 3. Crear Usuario Administrador
 
 ```bash
 # Opción 1: Script interactivo
@@ -122,13 +139,26 @@ python create_admin.py
 # POST http://localhost:5000/api/users/create-admin
 ```
 
-### 4. Iniciar Aplicación
+#### 4. Iniciar Aplicación
 
 ```bash
 python Main.py
 ```
 
 La aplicación estará disponible en: **http://localhost:5000**
+
+### Opción B: Despliegue en Railway con PostgreSQL
+
+Para desplegar en producción con Railway y PostgreSQL, consulta la **[Guía Completa de Despliegue](railway/DEPLOYMENT.md)** en la carpeta `railway/`.
+
+**Resumen rápido:**
+1. Crea una cuenta en [Railway.app](https://railway.app)
+2. Crea un nuevo proyecto y agrega PostgreSQL
+3. Configura las variables de entorno (consulta `railway/.env.example`)
+4. Conecta tu repositorio de GitHub
+5. Railway detectará automáticamente la configuración y desplegará
+
+📚 **Más información**: Ver `railway/README.md` y `railway/DEPLOYMENT.md`
 
 ## 🔑 Credenciales por Defecto
 
@@ -338,7 +368,8 @@ Authorization: Bearer <token>
 
 ### Tecnología
 - **SQLite**: Base de datos local para desarrollo
-- **SQLAlchemy**: ORM para manejo de datos
+- **PostgreSQL**: Base de datos para producción (Railway)
+- **SQLAlchemy**: ORM para manejo de datos con soporte multi-DB
 - **Migraciones**: Automáticas al iniciar aplicación
 - **Índices**: Optimizados para búsqueda y filtros
 
@@ -362,14 +393,34 @@ Authorization: Bearer <token>
 ## 🔧 Configuración Avanzada
 
 ### Variables de Entorno
-Crea un archivo `.env` para configuraciones personalizadas:
+
+#### Desarrollo Local (SQLite)
+La aplicación usa SQLite por defecto. No requiere configuración adicional.
+
+#### Producción (Railway + PostgreSQL)
+Crea las variables de entorno en Railway Dashboard:
 
 ```env
-SECRET_KEY=tu-clave-secreta-muy-segura
+# Base de Datos (Railway genera DATABASE_URL automáticamente)
+DATABASE_URL=postgresql://user:password@host:5432/database
+
+# Seguridad (IMPORTANTE: Genera claves únicas y seguras)
+SECRET_KEY=tu-clave-secreta-muy-segura-y-aleatoria
+JWT_SECRET_KEY=otra-clave-diferente-para-jwt
+
+# Configuración de JWT
 JWT_EXPIRATION_HOURS=24
-BCRYPT_ROUNDS=12
-DATABASE_URL=sqlite:///stores.db
+
+# Flask
+FLASK_ENV=production
 ```
+
+**⚠️ SEGURIDAD**: 
+- NUNCA uses las claves del ejemplo
+- Genera claves aleatorias seguras (ver `railway/.env.example`)
+- NUNCA subas archivos `.env` con valores reales a Git
+
+📚 **Plantilla completa**: Ver `railway/.env.example`
 
 ### Configuración de Producción
 - Cambiar `SECRET_KEY` por una clave segura aleatoria
@@ -388,11 +439,14 @@ DATABASE_URL=sqlite:///stores.db
 - [x] Búsqueda y filtros avanzados
 - [x] Panel de estadísticas
 - [x] Interfaz web administrativa
+- [x] Sistema de pestañas con navegación fluida
+- [x] Exportación a CSV de datos filtrados
+- [x] Soporte multi-database (SQLite + PostgreSQL)
+- [x] Configuración lista para Railway
 
 #### 🚧 En Desarrollo
 - [ ] **Gráficos en Estadísticas**: Visualización con Chart.js (barras, líneas, distribuciones)
 - [ ] **Funcionalidad de Eliminar Tiendas**: Conectar backend con frontend con confirmación
-- [ ] **Exportación a CSV**: Descargar datos de tiendas filtradas
 
 #### 💡 Planificadas
 - [ ] Sistema de auditoría (logs de cambios)
@@ -424,12 +478,15 @@ Contribuciones son bienvenidas! Por favor sigue estos pasos:
 
 ### Backend
 - **Python 3.x** - Lenguaje principal
-- **Flask** - Framework web
-- **SQLAlchemy** - ORM
-- **SQLite** - Base de datos
+- **Flask 3.0.3** - Framework web
+- **SQLAlchemy 2.0.30** - ORM con soporte multi-DB
+- **SQLite** - Base de datos de desarrollo
+- **PostgreSQL** - Base de datos de producción
+- **psycopg2-binary 2.9.9** - Driver PostgreSQL
 - **PyJWT** - Manejo de JWT tokens
 - **bcrypt** - Hash de contraseñas
 - **Flask-CORS** - Manejo de CORS
+- **gunicorn 21.2.0** - Servidor WSGI para producción
 
 ### Frontend
 - **HTML5 & CSS3** - Estructura y estilos
@@ -441,6 +498,7 @@ Contribuciones son bienvenidas! Por favor sigue estos pasos:
 ### Herramientas
 - **Git** - Control de versiones
 - **GitHub** - Repositorio remoto
+- **Railway** - Plataforma de despliegue en la nube
 - **VS Code** - IDE recomendado
 - **Postman** - Testing de API
 
