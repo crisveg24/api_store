@@ -486,7 +486,7 @@ Si encuentras algún problema o tienes preguntas:
 
 ---
 
-**¡Desarrollado con ❤️ usando Flask, SQLAlchemy y las mejores prácticas de seguridad y arquitectura de software!**
+**¡Desarrollado con perrenque usando Flask, SQLAlchemy y las mejores prácticas de seguridad y arquitectura de software!**
 
 ---
 
