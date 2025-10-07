@@ -434,36 +434,19 @@ def export_stores_csv():
         if admin_check:
             return admin_check
         
-        # Obtener parámetros de búsqueda y filtros (mismos que GET /stores)
+        # Obtener parámetros de búsqueda (mismo formato que GET /stores)
         search_query = request.args.get('search', '').strip()
+        sort_by = request.args.get('sort_by', 'store_id', type=str)
+        sort_order = request.args.get('sort_order', 'asc', type=str)
         
-        # Filtros
-        min_area = request.args.get('min_area', type=float)
-        max_area = request.args.get('max_area', type=float)
-        min_items = request.args.get('min_items', type=int)
-        max_items = request.args.get('max_items', type=int)
-        min_customers = request.args.get('min_customers', type=int)
-        max_customers = request.args.get('max_customers', type=int)
-        min_sales = request.args.get('min_sales', type=float)
-        max_sales = request.args.get('max_sales', type=float)
-        
-        filters = {
-            'min_area': min_area,
-            'max_area': max_area,
-            'min_items': min_items,
-            'max_items': max_items,
-            'min_customers': min_customers,
-            'max_customers': max_customers,
-            'min_sales': min_sales,
-            'max_sales': max_sales
-        }
-        
-        # Obtener todas las tiendas filtradas (sin paginación)
-        stores_result = service.obtener_tiendas_con_filtros(
-            search_query=search_query if search_query else None,
-            filters=filters,
+        # Obtener todas las tiendas con los filtros aplicados (sin límite de paginación)
+        # Usamos un número muy grande para obtener todos los registros
+        stores_result = service.listar_tiendas_paginadas(
             page=1,
-            per_page=999999  # Obtener todas las tiendas
+            per_page=999999,  # Obtener todas las tiendas
+            search=search_query if search_query else None,
+            sort_by=sort_by,
+            sort_order=sort_order
         )
         
         stores = stores_result.get('stores', [])
@@ -493,7 +476,7 @@ def export_stores_csv():
         response.headers['Content-Type'] = 'text/csv; charset=utf-8'
         response.headers['Content-Disposition'] = f'attachment; filename=tiendas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
         
-        logging.info(f"Exportando {len(stores)} tiendas a CSV por usuario {current_user.user_id}")
+        logging.info(f"Exportando {len(stores)} tiendas a CSV por usuario {current_user.username}")
         
         return response
         
