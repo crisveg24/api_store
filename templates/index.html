@@ -44,42 +44,36 @@
                     </button>
                 </div>
                 
-                <!-- Enlaces para usuarios autenticados -->
+                <!-- Menú de navegación por tabs para usuarios autenticados -->
                 <div id="userNav" class="nav-user hidden">
-                    <div class="user-info">
-                        <i data-lucide="user"></i>
-                        <div class="user-details">
-                            <p class="user-name" id="welcomeUser">Bienvenido</p>
-                            <p class="user-email" id="userEmail"></p>
-                        </div>
-                        <span id="userRole" class="user-badge"></span>
+                    <!-- Menú de navegación -->
+                    <div class="nav-menu" id="navMenu">
+                        <button class="nav-menu-item active" data-tab="stores" title="Gestión de Tiendas">
+                            <i data-lucide="store"></i>
+                            <span>Tiendas</span>
+                        </button>
+                        <button class="nav-menu-item admin-only" data-tab="users" title="Gestión de Usuarios">
+                            <i data-lucide="users"></i>
+                            <span>Usuarios</span>
+                        </button>
+                        <button class="nav-menu-item admin-only" data-tab="stats" title="Estadísticas del Sistema">
+                            <i data-lucide="bar-chart-3"></i>
+                            <span>Estadísticas</span>
+                        </button>
                     </div>
                     
-                    <div class="dropdown">
-                        <button class="btn btn-ghost dropdown-toggle" id="userDropdown">
-                            <i data-lucide="chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu" id="dropdownMenu">
-                            <button class="dropdown-item" id="storesBtn">
-                                <i data-lucide="store"></i>
-                                <span>Gestión de Tiendas</span>
-                            </button>
-                            <div class="admin-only">
-                                <button class="dropdown-item" id="usersManagementBtn">
-                                    <i data-lucide="users"></i>
-                                    <span>Gestión de Usuarios</span>
-                                </button>
-                                <button class="dropdown-item" id="statsBtn">
-                                    <i data-lucide="bar-chart-3"></i>
-                                    <span>Estadísticas</span>
-                                </button>
+                    <!-- Información del usuario y logout -->
+                    <div class="user-info-section">
+                        <div class="user-info">
+                            <i data-lucide="user"></i>
+                            <div class="user-details">
+                                <p class="user-name" id="welcomeUser">Bienvenido</p>
+                                <span id="userRole" class="user-badge"></span>
                             </div>
-                            <div class="dropdown-divider"></div>
-                            <button class="dropdown-item text-destructive" id="logoutBtn">
-                                <i data-lucide="log-out"></i>
-                                <span>Cerrar Sesión</span>
-                            </button>
                         </div>
+                        <button class="btn btn-ghost" id="logoutBtn" title="Cerrar Sesión">
+                            <i data-lucide="log-out"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -750,6 +744,7 @@
             initializeNotifications();
             initializeDropdowns();
             initializeModals();
+            initializeTabNavigation();
             checkAuthStatus();
         });
     </script>

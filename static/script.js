@@ -303,21 +303,30 @@ function showAuthenticatedView() {
         // Ensure logout button is visible and working
         $('#logoutBtn').show();
         
-        // Show admin-only elements
+        // Show admin-only elements based on role
         if (currentUser.role === 'admin') {
             console.log('Showing admin elements');
             $('.admin-only').removeClass('hidden').show();
-            loadUsers(); // Load users for admin
         } else {
             console.log('Hiding admin elements');
             $('.admin-only').addClass('hidden').hide();
         }
         
+        // Initialize tab navigation
+        console.log('Initializing tab navigation...');
+        initializeTabNavigation();
+        
+        // Navigate to stores tab by default
+        navigateToTab('stores');
+        
         // Initialize event handlers after DOM changes
         console.log('Re-initializing event handlers...');
         initializePostLoginHandlers();
         
-        // Note: Dropdown initialization happens in document.ready, not here
+        // Refresh Lucide icons for the new navigation
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     } else {
         console.error('No current user found');
     }
@@ -1768,7 +1777,7 @@ function exportStoresToCSV() {
     const minSales = $('#minSalesInput').val();
     const maxSales = $('#maxSalesInput').val();
     
-    // Construir URL con parámetros
+    // Construir URL con parï¿½metros
     let url = '/api/stores/export?';
     const params = [];
     
@@ -1786,12 +1795,12 @@ function exportStoresToCSV() {
     
     console.log('Export URL:', url);
     
-    // Deshabilitar botón durante la exportación
+    // Deshabilitar botï¿½n durante la exportaciï¿½n
     const $btn = $('#exportCSVBtn');
     const originalHTML = $btn.html();
     $btn.prop('disabled', true).html('<div class="loading-spinner small"></div> Exportando...');
     
-    // Realizar petición para descargar el archivo
+    // Realizar peticiï¿½n para descargar el archivo
     fetch(url, {
         method: 'GET',
         headers: {
@@ -1818,7 +1827,7 @@ function exportStoresToCSV() {
         showNotification('Archivo CSV descargado exitosamente', 'success');
         console.log('CSV export successful');
         
-        // Restaurar botón
+        // Restaurar botï¿½n
         $btn.prop('disabled', false).html(originalHTML);
         lucide.createIcons();
     })
@@ -1826,8 +1835,90 @@ function exportStoresToCSV() {
         console.error('Error exporting CSV:', error);
         showNotification('Error al exportar datos a CSV', 'error');
         
-        // Restaurar botón
+        // Restaurar botï¿½n
         $btn.prop('disabled', false).html(originalHTML);
         lucide.createIcons();
     });
+}
+
+// =============================================================================
+// NAVEGACIï¿½N POR TABS
+// =============================================================================
+
+function initializeTabNavigation() {
+    console.log('=== Initializing tab navigation ===');
+    
+    // Event listeners para los botones del menï¿½
+    $('.nav-menu-item').on('click', function(e) {
+        e.preventDefault();
+        const tab = $(this).data('tab');
+        console.log('Tab clicked:', tab);
+        
+        // Verificar permisos
+        if ($(this).hasClass('admin-only') && (!currentUser || currentUser.role !== 'admin')) {
+            showNotification('No tienes permisos para acceder a esta secciï¿½n', 'warning');
+            return;
+        }
+        
+        // Actualizar estado activo de los tabs
+        $('.nav-menu-item').removeClass('active');
+        $(this).addClass('active');
+        
+        // Navegar a la secciï¿½n correspondiente
+        navigateToTab(tab);
+    });
+    
+    console.log('Tab navigation initialized');
+}
+
+function navigateToTab(tab) {
+    console.log('=== Navigating to tab:', tab, '===');
+    
+    // Actualizar estado activo de los tabs
+    $('.nav-menu-item').removeClass('active');
+    $(`.nav-menu-item[data-tab="${tab}"]`).addClass('active');
+    
+    // Ocultar todos los paneles
+    $('#storesPanel').addClass('hidden');
+    $('#usersPanel').addClass('hidden');
+    $('#statsPanel').addClass('hidden');
+    
+    // Mostrar el panel correspondiente
+    switch(tab) {
+        case 'stores':
+            $('#storesPanel').removeClass('hidden');
+            loadStores(currentPage);
+            break;
+            
+        case 'users':
+            if (currentUser && currentUser.role === 'admin') {
+                $('#usersPanel').removeClass('hidden');
+                loadUsers();
+            } else {
+                showNotification('No tienes permisos para gestionar usuarios', 'warning');
+                // Volver al tab de tiendas
+                navigateToTab('stores');
+                return;
+            }
+            break;
+            
+        case 'stats':
+            if (currentUser && currentUser.role === 'admin') {
+                $('#statsPanel').removeClass('hidden');
+                loadStatistics();
+            } else {
+                showNotification('No tienes permisos para ver estadÃ­sticas', 'warning');
+                // Volver al tab de tiendas
+                navigateToTab('stores');
+                return;
+            }
+            break;
+            
+        default:
+            $('#storesPanel').removeClass('hidden');
+            loadStores(currentPage);
+    }
+    
+    // Actualizar iconos de Lucide
+    lucide.createIcons();
 }
