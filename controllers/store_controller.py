@@ -412,6 +412,100 @@ def get_store_stats():
             'error': 'INTERNAL_ERROR'
         }), 500
 
+
+@store_bp.route('/stores/export', methods=['GET'])
+@jwt_required()
+def export_stores_csv():
+    """
+    GET /stores/export
+    Exportar tiendas a CSV con filtros aplicados (solo administradores).
+    """
+    try:
+        from flask import make_response
+        from io import StringIO
+        import csv
+        from datetime import datetime
+        
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
+        # Obtener parámetros de búsqueda y filtros (mismos que GET /stores)
+        search_query = request.args.get('search', '').strip()
+        
+        # Filtros
+        min_area = request.args.get('min_area', type=float)
+        max_area = request.args.get('max_area', type=float)
+        min_items = request.args.get('min_items', type=int)
+        max_items = request.args.get('max_items', type=int)
+        min_customers = request.args.get('min_customers', type=int)
+        max_customers = request.args.get('max_customers', type=int)
+        min_sales = request.args.get('min_sales', type=float)
+        max_sales = request.args.get('max_sales', type=float)
+        
+        filters = {
+            'min_area': min_area,
+            'max_area': max_area,
+            'min_items': min_items,
+            'max_items': max_items,
+            'min_customers': min_customers,
+            'max_customers': max_customers,
+            'min_sales': min_sales,
+            'max_sales': max_sales
+        }
+        
+        # Obtener todas las tiendas filtradas (sin paginación)
+        stores_result = service.obtener_tiendas_con_filtros(
+            search_query=search_query if search_query else None,
+            filters=filters,
+            page=1,
+            per_page=999999  # Obtener todas las tiendas
+        )
+        
+        stores = stores_result.get('stores', [])
+        
+        # Crear archivo CSV en memoria
+        si = StringIO()
+        writer = csv.writer(si)
+        
+        # Escribir encabezados
+        writer.writerow(['ID', 'Área (m²)', 'Items Disponibles', 'Clientes Diarios', 'Ventas ($)'])
+        
+        # Escribir datos de tiendas
+        for store in stores:
+            writer.writerow([
+                store.get('store_id'),
+                store.get('store_area'),
+                store.get('items_available'),
+                store.get('daily_customer_count'),
+                store.get('store_sales')
+            ])
+        
+        # Crear respuesta con el CSV
+        output = si.getvalue()
+        si.close()
+        
+        response = make_response(output)
+        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename=tiendas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        
+        logging.info(f"Exportando {len(stores)} tiendas a CSV por usuario {current_user.user_id}")
+        
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error en export_stores_csv: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error al exportar datos',
+            'error': 'EXPORT_ERROR'
+        }), 500
+
+
 # ============================================================================
 # MANEJO DE ERRORES
 # ============================================================================

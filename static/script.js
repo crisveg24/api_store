@@ -489,6 +489,11 @@ function initializePostLoginHandlers() {
         loadStores(currentPage);
     });
     
+    $('#exportCSVBtn').off('click').on('click', function() {
+        console.log('Export CSV button clicked');
+        exportStoresToCSV();
+    });
+    
     $('#perPageSelect').off('change').on('change', function() {
         console.log('Per page select changed:', $(this).val());
         loadStores(1);
@@ -1736,5 +1741,93 @@ function renderTrendsChart(stats) {
                 }
             }
         }
+    });
+}
+
+// =============================================================================
+// EXPORT TO CSV FUNCTION
+// =============================================================================
+
+function exportStoresToCSV() {
+    console.log('=== Exporting stores to CSV ===');
+    const token = localStorage.getItem('token');
+    
+    if (!currentUser || !currentUser.role || currentUser.role !== 'admin') {
+        showNotification('Solo los administradores pueden exportar datos', 'warning');
+        return;
+    }
+    
+    // Obtener filtros actuales
+    const searchQuery = $('#storeSearchInput').val().trim();
+    const minArea = $('#minAreaInput').val();
+    const maxArea = $('#maxAreaInput').val();
+    const minItems = $('#minItemsInput').val();
+    const maxItems = $('#maxItemsInput').val();
+    const minCustomers = $('#minCustomersInput').val();
+    const maxCustomers = $('#maxCustomersInput').val();
+    const minSales = $('#minSalesInput').val();
+    const maxSales = $('#maxSalesInput').val();
+    
+    // Construir URL con parámetros
+    let url = '/api/stores/export?';
+    const params = [];
+    
+    if (searchQuery) params.push(`search=${encodeURIComponent(searchQuery)}`);
+    if (minArea) params.push(`min_area=${minArea}`);
+    if (maxArea) params.push(`max_area=${maxArea}`);
+    if (minItems) params.push(`min_items=${minItems}`);
+    if (maxItems) params.push(`max_items=${maxItems}`);
+    if (minCustomers) params.push(`min_customers=${minCustomers}`);
+    if (maxCustomers) params.push(`max_customers=${maxCustomers}`);
+    if (minSales) params.push(`min_sales=${minSales}`);
+    if (maxSales) params.push(`max_sales=${maxSales}`);
+    
+    url += params.join('&');
+    
+    console.log('Export URL:', url);
+    
+    // Deshabilitar botón durante la exportación
+    const $btn = $('#exportCSVBtn');
+    const originalHTML = $btn.html();
+    $btn.prop('disabled', true).html('<div class="loading-spinner small"></div> Exportando...');
+    
+    // Realizar petición para descargar el archivo
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al exportar datos');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        // Crear un enlace temporal para descargar el archivo
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `tiendas_${new Date().getTime()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+        
+        showNotification('Archivo CSV descargado exitosamente', 'success');
+        console.log('CSV export successful');
+        
+        // Restaurar botón
+        $btn.prop('disabled', false).html(originalHTML);
+        lucide.createIcons();
+    })
+    .catch(error => {
+        console.error('Error exporting CSV:', error);
+        showNotification('Error al exportar datos a CSV', 'error');
+        
+        // Restaurar botón
+        $btn.prop('disabled', false).html(originalHTML);
+        lucide.createIcons();
     });
 }
