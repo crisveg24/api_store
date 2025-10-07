@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify
 from flask_jwt_extended import JWTManager
 from controllers.store_controller import store_bp  # Importamos el blueprint para las rutas de Store
-from controllers.user_controller_demo import user_bp   # Importamos el blueprint para las rutas de usuarios (versión demo)
+from controllers.user_controller import user_bp   # Importamos el blueprint para las rutas de usuarios
 from config.database import Base, engine, create_tables, initialize_data
 from config.jwt_config import (
     JWT_SECRET_KEY, JWT_TOKEN_LOCATION, JWT_ACCESS_TOKEN_EXPIRES,
