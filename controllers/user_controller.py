@@ -431,9 +431,8 @@ def get_all_users():
         }), 500
 
 @user_bp.route('/<int:user_id>/role', methods=['PUT'])
-@token_required
-@admin_required
-def update_user_role(current_user, user_id):
+@jwt_required()
+def update_user_role(user_id):
     """
     Actualizar el rol de un usuario (solo admins).
     
@@ -443,6 +442,14 @@ def update_user_role(current_user, user_id):
     }
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         data = request.get_json()
         
         if not data:
@@ -499,13 +506,20 @@ def update_user_role(current_user, user_id):
         }), 500
 
 @user_bp.route('/<int:user_id>/toggle-status', methods=['PUT'])
-@token_required
-@admin_required
-def toggle_user_status(current_user, user_id):
+@jwt_required()
+def toggle_user_status(user_id):
     """
     Activar/desactivar un usuario (solo admins).
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         success, message, user_data = user_service.toggle_user_status(
             admin_user_id=current_user.user_id,
             target_user_id=user_id
@@ -533,13 +547,20 @@ def toggle_user_status(current_user, user_id):
         }), 500
 
 @user_bp.route('/<int:user_id>', methods=['DELETE'])
-@token_required
-@admin_required
-def delete_user(current_user, user_id):
+@jwt_required()
+def delete_user(user_id):
     """
     Eliminar un usuario (solo admins).
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         success, message = user_service.delete_user(
             admin_user_id=current_user.user_id,
             target_user_id=user_id
@@ -619,12 +640,22 @@ def create_admin():
 # ============================================================================
 
 @user_bp.route('/verify-token', methods=['GET'])
-@token_required
-def verify_token(current_user):
+@jwt_required()
+def verify_token():
     """
     Verificar si un token es válido y obtener información del usuario.
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        if not current_user:
+            return jsonify({
+                'success': False,
+                'message': 'Usuario no encontrado',
+                'error': 'USER_NOT_FOUND'
+            }), 404
+        
         user_data = {
             "user_id": current_user.user_id,
             "username": current_user.username,
@@ -652,9 +683,8 @@ def verify_token(current_user):
 # ============================================================================
 
 @user_bp.route('/create', methods=['POST'])
-@token_required
-@admin_required
-def create_user(current_user):
+@jwt_required()
+def create_user():
     """
     Endpoint para que los administradores creen nuevos usuarios.
     
@@ -667,6 +697,14 @@ def create_user(current_user):
     }
     """
     try:
+        # Obtener usuario actual
+        current_user = get_current_user()
+        
+        # Verificar permisos de administrador
+        admin_check = check_admin_permissions(current_user)
+        if admin_check:
+            return admin_check
+        
         data = request.get_json()
         
         # Validar datos requeridos
