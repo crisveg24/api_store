@@ -647,6 +647,36 @@
     </div>
 
     <!-- Modal para editar tienda -->
+    <!-- Modal de confirmación de eliminación -->
+    <div id="deleteStoreModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <div class="modal-icon modal-icon-danger">
+                    <i data-lucide="alert-triangle"></i>
+                </div>
+                <h3 class="modal-title">Confirmar Eliminación</h3>
+                <button class="modal-close" data-dismiss="modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-center">¿Estás seguro de que quieres eliminar esta tienda?</p>
+                <p class="text-center text-muted"><strong>Esta acción no se puede deshacer.</strong></p>
+                <div class="delete-store-info">
+                    <p><strong>ID de Tienda:</strong> <span id="deleteStoreId"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" data-dismiss="modal">Cancelar</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    <i data-lucide="trash-2"></i>
+                    <span>Eliminar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="editStoreModal" class="modal">
         <div class="modal-backdrop"></div>
         <div class="modal-content">

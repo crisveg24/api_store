@@ -901,11 +901,64 @@ function updatePaginationInfo(response) {
 
 // Placeholder functions for other features
 function deleteStore(storeId) {
-    console.log('deleteStore called with ID:', storeId);
-    if (!confirm('Â¿EstÃ¡s seguro de que quieres eliminar esta tienda?')) {
+    console.log('=== deleteStore called with ID:', storeId);
+    const token = localStorage.getItem('token');
+    
+    if (!currentUser || !currentUser.role || currentUser.role !== 'admin') {
+        showNotification('Solo los administradores pueden eliminar tiendas', 'warning');
         return;
     }
-    // Implementation here
+    
+    // Cerrar dropdown si estÃ¡ abierto
+    $('.store-card .dropdown').removeClass('active');
+    
+    // Mostrar modal de confirmaciÃ³n
+    $('#deleteStoreId').text(storeId);
+    $('#deleteStoreModal').addClass('active');
+    
+    // Remover event listeners previos para evitar duplicados
+    $('#confirmDeleteBtn').off('click');
+    
+    // Event listener para confirmar eliminaciÃ³n
+    $('#confirmDeleteBtn').on('click', function() {
+        console.log('Confirming deletion of store:', storeId);
+        
+        // Desactivar botÃ³n mientras se procesa
+        $(this).prop('disabled', true).html('<div class="loading-spinner small"></div> Eliminando...');
+        
+        $.ajax({
+            url: `/api/stores/${storeId}`,
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            success: function(response) {
+                console.log('Store deleted successfully:', response);
+                $('#deleteStoreModal').removeClass('active');
+                showNotification('Tienda eliminada exitosamente', 'success');
+                
+                // Recargar la lista de tiendas
+                currentPage = 1;
+                loadStores(currentPage);
+                
+                // Restaurar botÃ³n
+                $('#confirmDeleteBtn').prop('disabled', false).html('<i data-lucide="trash-2"></i> <span>Eliminar</span>');
+                lucide.createIcons();
+            },
+            error: function(xhr) {
+                console.error('Error deleting store:', xhr);
+                const message = xhr.responseJSON?.message || 'Error al eliminar la tienda';
+                showNotification(message, 'error');
+                
+                // Restaurar botÃ³n
+                $('#confirmDeleteBtn').prop('disabled', false).html('<i data-lucide="trash-2"></i> <span>Eliminar</span>');
+                lucide.createIcons();
+            }
+        });
+    });
+    
+    // Inicializar iconos de Lucide en el modal
+    lucide.createIcons();
 }
 
 function showStoreDetails(storeId) {
@@ -1406,25 +1459,25 @@ $(document).ready(function() {
     }, 2000); // Wait 2 seconds to ensure DOM is fully loaded
 });
 // =============================================================================
-// CHART.JS FUNCTIONS - Gráficos de Estadísticas
+// CHART.JS FUNCTIONS - Grï¿½ficos de Estadï¿½sticas
 // =============================================================================
 
-// Variables para almacenar instancias de los gráficos
+// Variables para almacenar instancias de los grï¿½ficos
 let salesChartInstance = null;
 let distributionChartInstance = null;
 let trendsChartInstance = null;
 
-// Función para renderizar gráfico de barras de ventas
+// Funciï¿½n para renderizar grï¿½fico de barras de ventas
 function renderSalesChart(stats) {
     const ctx = document.getElementById('salesChart');
     if (!ctx) return;
     
-    // Destruir gráfico anterior si existe
+    // Destruir grï¿½fico anterior si existe
     if (salesChartInstance) {
         salesChartInstance.destroy();
     }
     
-    // Crear rangos de ventas para el gráfico
+    // Crear rangos de ventas para el grï¿½fico
     const ranges = [
         { label: '0-10K', min: 0, max: 10000 },
         { label: '10K-25K', min: 10000, max: 25000 },
@@ -1433,7 +1486,7 @@ function renderSalesChart(stats) {
         { label: '100K+', min: 100000, max: Infinity }
     ];
     
-    // Simular distribución basada en estadísticas
+    // Simular distribuciï¿½n basada en estadï¿½sticas
     const total = stats.total_stores || 0;
     const avgSales = stats.sales?.average || 0;
     
@@ -1449,7 +1502,7 @@ function renderSalesChart(stats) {
         data: {
             labels: ranges.map(r => r.label),
             datasets: [{
-                label: 'Número de Tiendas',
+                label: 'Nï¿½mero de Tiendas',
                 data: data,
                 backgroundColor: [
                     'rgba(239, 68, 68, 0.8)',
@@ -1498,7 +1551,7 @@ function renderSalesChart(stats) {
     });
 }
 
-// Función para renderizar gráfico de distribución de tiendas
+// Funciï¿½n para renderizar grï¿½fico de distribuciï¿½n de tiendas
 function renderDistributionChart(stats) {
     const ctx = document.getElementById('distributionChart');
     if (!ctx) return;
@@ -1511,7 +1564,7 @@ function renderDistributionChart(stats) {
     const total = stats.total_stores || 0;
     
     const categories = [
-        { label: 'Pequeñas (< 100m)', value: Math.floor(total * 0.25) },
+        { label: 'Pequeï¿½as (< 100m)', value: Math.floor(total * 0.25) },
         { label: 'Medianas (100-200m)', value: Math.floor(total * 0.45) },
         { label: 'Grandes (200-300m)', value: Math.floor(total * 0.20) },
         { label: 'Extra Grandes (> 300m)', value: Math.floor(total * 0.10) }
@@ -1567,7 +1620,7 @@ function renderDistributionChart(stats) {
     });
 }
 
-// Función para renderizar gráfico de líneas de tendencias
+// Funciï¿½n para renderizar grï¿½fico de lï¿½neas de tendencias
 function renderTrendsChart(stats) {
     const ctx = document.getElementById('trendsChart');
     if (!ctx) return;

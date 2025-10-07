@@ -1958,3 +1958,49 @@ body {
     font-size: var(--font-size-base);
   }
 }
+
+/* ==========================================================================
+   ESTILOS PARA MODAL DE ELIMINACIÓN
+   ========================================================================== */
+
+.modal-sm {
+  max-width: 450px;
+}
+
+.modal-icon-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--destructive);
+}
+
+.delete-store-info {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.delete-store-info p {
+  margin: 0;
+  color: var(--foreground);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-sm);
+}
+
+.btn-danger {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+  border: 1px solid var(--destructive);
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
