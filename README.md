@@ -390,6 +390,315 @@ Authorization: Bearer <token>
 - ✅ Sanitización de datos
 - ✅ Manejo seguro de errores
 
+## 🧪 Testing
+
+### Tests Automatizados Implementados
+
+El proyecto incluye una suite completa de **24 tests** que verifican:
+
+#### 📋 Tests de Autenticación (7 tests)
+- ✅ Login con credenciales válidas (username y email)
+- ✅ Login con credenciales inválidas
+- ✅ Login con usuario inexistente
+- ✅ Login con usuario inactivo
+- ✅ Validación de datos requeridos
+
+#### 📋 Tests de Registro (4 tests)
+- ✅ Registro exitoso de usuarios
+- ✅ Validación de email único
+- ✅ Validación de username único
+- ✅ Validación de campos requeridos
+
+#### 📋 Tests de Rutas Protegidas (5 tests)
+- ✅ Acceso con token válido
+- ✅ Rechazo sin token
+- ✅ Rechazo con token inválido
+- ✅ Rechazo con token expirado
+- ✅ Actualización de perfil
+
+#### 📋 Tests de Autorización por Roles (5 tests)
+- ✅ Usuario puede leer tiendas
+- ✅ Usuario NO puede crear tiendas (solo admins)
+- ✅ Admin puede crear tiendas
+- ✅ Admin puede gestionar usuarios
+- ✅ Usuario NO puede gestionar usuarios
+
+#### 📋 Tests de Verificación (2 tests)
+- ✅ Verificación de token válido
+- ✅ Validación de token requerido
+
+### Ejecutar Tests
+
+#### Instalar dependencias de testing
+
+```bash
+pip install pytest pytest-flask
+```
+
+#### Ejecutar TODOS los tests
+
+```bash
+pytest
+```
+
+#### Ejecutar con salida detallada
+
+```bash
+pytest -v
+```
+
+#### Ejecutar tests con cobertura
+
+```bash
+pytest --cov=. --cov-report=html
+```
+
+#### Ejecutar un archivo específico
+
+```bash
+pytest tests/test_auth.py
+```
+
+#### Ejecutar un test específico
+
+```bash
+pytest tests/test_auth.py::TestLogin::test_login_con_credenciales_validas_username
+```
+
+### Configuración de Tests
+
+Los tests usan:
+- **Base de datos en memoria** (SQLite :memory:) para velocidad y aislamiento
+- **Fixtures automáticas** para usuarios de prueba
+- **JWT tokens de prueba** para autenticación
+- **Cleanup automático** después de cada test
+
+📚 **Documentación completa**: Ver `tests/README.md`
+
+## 🔐 Flujo de Autenticación
+
+### Diagrama de Flujo
+
+```
+┌─────────────────┐
+│   Usuario       │
+└────────┬────────┘
+         │
+         │ 1. POST /api/users/login
+         │    { "identifier": "admin", "password": "Admin123!" }
+         ▼
+┌─────────────────┐
+│   API Server    │
+└────────┬────────┘
+         │ 2. Validar credenciales
+         │    - Buscar usuario
+         │    - Verificar password hash (bcrypt)
+         │    - Verificar usuario activo
+         ▼
+┌─────────────────┐
+│  Generar JWT    │
+│  - user_id      │
+│  - username     │
+│  - role         │
+│  - exp: 24h     │
+└────────┬────────┘
+         │ 3. Retornar token
+         ▼
+┌─────────────────┐
+│   Usuario       │
+│ Guarda token    │
+└────────┬────────┘
+         │
+         │ 4. Request con token
+         │    Authorization: Bearer <token>
+         ▼
+┌─────────────────┐
+│ @jwt_required() │
+│ Valida token    │
+└────────┬────────┘
+         │ 5. Verificar rol (si es admin)
+         │    check_admin_permissions()
+         ▼
+┌─────────────────┐
+│ Ejecutar acción │
+│ Retornar datos  │
+└─────────────────┘
+```
+
+### Ejemplo Completo de Uso
+
+#### 1. Registrar un nuevo usuario
+
+```bash
+POST /api/users/register
+Content-Type: application/json
+
+{
+  "username": "juan_perez",
+  "email": "juan@example.com",
+  "password": "MiPassword123!"
+}
+```
+
+**Respuesta (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Usuario registrado exitosamente",
+  "data": {
+    "user_id": 3,
+    "username": "juan_perez",
+    "email": "juan@example.com",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2025-10-12T10:30:00"
+  }
+}
+```
+
+#### 2. Hacer login y obtener token
+
+```bash
+POST /api/users/login
+Content-Type: application/json
+
+{
+  "identifier": "juan_perez",
+  "password": "MiPassword123!"
+}
+```
+
+**Respuesta (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Login exitoso",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY5NzA0MDAwMCwianRpIjoiNGY4NzE0YTAtYjkyYi00YzJjLTk2NzQtOTJhMjQ4YmI4ZDM3IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjMiLCJuYmYiOjE2OTcwNDAwMDAsImV4cCI6MTY5NzEyNjQwMH0.KPe8i8qR2m0VQGp2dH7vQV5SgTcXMB4B2cD5hZdvWw8",
+    "token_type": "bearer",
+    "user_id": 3,
+    "username": "juan_perez",
+    "email": "juan@example.com",
+    "role": "user"
+  }
+}
+```
+
+#### 3. Usar el token para acceder a rutas protegidas
+
+```bash
+GET /api/users/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Perfil obtenido exitosamente",
+  "data": {
+    "user_id": 3,
+    "username": "juan_perez",
+    "email": "juan@example.com",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2025-10-12T10:30:00"
+  }
+}
+```
+
+#### 4. Intentar acceso sin permisos (usuario normal a endpoint admin)
+
+```bash
+POST /api/stores
+Authorization: Bearer <token_de_usuario_normal>
+Content-Type: application/json
+
+{
+  "store_area": 150.0,
+  "items_available": 50,
+  "daily_customer_count": 200,
+  "store_sales": 15000.00
+}
+```
+
+**Respuesta (403 Forbidden):**
+```json
+{
+  "success": false,
+  "message": "Se requieren permisos de administrador",
+  "error": "INSUFFICIENT_PERMISSIONS"
+}
+```
+
+### Estructura del Token JWT
+
+El token JWT contiene la siguiente información:
+
+```json
+{
+  "header": {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "fresh": false,
+    "iat": 1697040000,
+    "jti": "4f8714a0-b92b-4c2c-9674-92a248bb8d37",
+    "type": "access",
+    "sub": "3",
+    "nbf": 1697040000,
+    "exp": 1697126400
+  },
+  "signature": "..."
+}
+```
+
+- **sub**: User ID
+- **exp**: Expiration (24 horas desde emisión)
+- **iat**: Issued at (timestamp de creación)
+- **jti**: JWT ID (identificador único del token)
+
+### Roles y Permisos
+
+| Rol | Permisos |
+|-----|----------|
+| **USER** | • Ver tiendas (GET /api/stores)<br>• Ver su propio perfil<br>• Actualizar su propio perfil |
+| **ADMIN** | • **Todos los permisos de USER** +<br>• Crear tiendas<br>• Actualizar tiendas<br>• Eliminar tiendas<br>• Ver estadísticas<br>• Gestionar usuarios<br>• Cambiar roles<br>• Activar/desactivar usuarios<br>• Exportar datos |
+
+## 📦 Colección de Thunder Client / Postman
+
+El proyecto incluye una colección completa con **20 requests pre-configurados** para probar todos los endpoints:
+
+### Importar Colección
+
+#### Thunder Client (VS Code)
+1. Instalar extensión Thunder Client
+2. Abrir Thunder Client
+3. Click en "Import"
+4. Seleccionar `thunder-collection_API_Store.json`
+
+#### Postman
+1. Abrir Postman
+2. Click en "Import"
+3. Seleccionar `thunder-collection_API_Store.json`
+4. Postman convertirá automáticamente el formato
+
+### Ambientes Incluidos
+
+- **Development**: `http://localhost:5000`
+- **Production**: `https://tu-app.railway.app`
+
+### Features de la Colección
+
+- ✅ **20 requests organizados** en 5 carpetas
+- ✅ **Tests automáticos** en cada request
+- ✅ **Variables de entorno** configuradas
+- ✅ **Auto-extracción de tokens** (el login guarda el token automáticamente)
+- ✅ **Ejemplos de payloads** en cada request
+
+📚 **Archivo**: `thunder-collection_API_Store.json`
+
 ## 🔧 Configuración Avanzada
 
 ### Variables de Entorno

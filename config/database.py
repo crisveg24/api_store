@@ -2,7 +2,7 @@ import os
 import logging
 import pandas as pd
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import OperationalError
 from models.store_model import Base, Store  
 from models.user_model import User  # Importar modelo de usuario
@@ -12,6 +12,9 @@ logging.basicConfig(level=logging.INFO)
 
 # Cargar variables de entorno desde .env
 load_dotenv()
+
+# Variable global para la sesión scoped (thread-safe)
+db_session = None
 
 # Configuración de base de datos
 # Prioridad: DATABASE_URL (Railway) > Variables individuales > SQLite (desarrollo)
@@ -78,6 +81,26 @@ def get_engine():
 engine = get_engine()
 Session = sessionmaker(bind=engine)
 
+# Crear sesión scoped (thread-safe para Flask)
+db_session = scoped_session(Session)
+
+# Alias para compatibilidad
+db = db_session
+
+def init_app(app):
+    """
+    Inicializar la base de datos con una aplicación Flask.
+    Configura el teardown del contexto para cerrar sesiones automáticamente.
+    
+    Args:
+        app: Instancia de Flask app
+    """
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        """Cerrar la sesión de base de datos al final de cada request"""
+        if db_session:
+            db_session.remove()
+
 def create_tables():
     """
     Crear todas las tablas en la base de datos.
@@ -100,7 +123,7 @@ def load_data_from_csv():
     """
     Carga los datos desde el archivo CSV a la base de datos.
     """
-    file_path = os.path.join(os.path.dirname(__file__), 'files', 'Stores_clean.csv')  
+    file_path = os.path.join(os.path.dirname(__file__), 'files', 'Stores.csv')  
     logging.info(f"Archivo CSV localizado en: {file_path}")
 
     session = None  # Inicializa la variable 'session'
@@ -114,10 +137,10 @@ def load_data_from_csv():
         session = Session()  # Crear una nueva sesión de base de datos
         for _, row in df.iterrows():
             store = Store(
-                store_area=row['Store_Area'],
-                items_available=row['Items_Available'],
-                daily_customer_count=row['Daily_Customer_Count'],
-                store_sales=row['Store_Sales']
+                store_area=float(row['Store_Area']),
+                items_available=int(row['Items_Available']),
+                daily_customer_count=int(row['Daily_Customer_Count']),
+                store_sales=float(row['Store_Sales'])
             )
             session.add(store)
         session.commit()  # Confirmar los cambios

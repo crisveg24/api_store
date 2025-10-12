@@ -1,0 +1,654 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "API Store - Sistema de Gestión de Tiendas",
+  "dateExported": "2025-10-12",
+  "version": "1.2",
+  "folderName": "API Store",
+  "requests": [
+    {
+      "_id": "req_1",
+      "colId": "api_store",
+      "containerId": "",
+      "name": "01. Health Check",
+      "url": "{{base_url}}/health",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "expr": "$.status",
+          "value": "healthy"
+        }
+      ]
+    },
+    {
+      "_id": "req_2",
+      "colId": "api_store",
+      "containerId": "auth",
+      "name": "02. Registro de Usuario",
+      "url": "{{base_url}}/api/users/register",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"username\": \"nuevo_usuario\",\n  \"email\": \"usuario@example.com\",\n  \"password\": \"Password123!\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "expr": "$.success",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "_id": "req_3",
+      "colId": "api_store",
+      "containerId": "auth",
+      "name": "03. Login (Obtener Token)",
+      "url": "{{base_url}}/api/users/login",
+      "method": "POST",
+      "sortNum": 30000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"identifier\": \"admin\",\n  \"password\": \"Admin123!\"\n}",
+        "form": []
+      },
+      "setters": [
+        {
+          "type": "json-query",
+          "path": "data.access_token",
+          "variable": "auth_token"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "expr": "$.success",
+          "value": "true"
+        },
+        {
+          "type": "json-query",
+          "expr": "$.data.access_token",
+          "operator": "isNotEmpty"
+        }
+      ]
+    },
+    {
+      "_id": "req_4",
+      "colId": "api_store",
+      "containerId": "auth",
+      "name": "04. Verificar Token",
+      "url": "{{base_url}}/api/users/verify-token",
+      "method": "GET",
+      "sortNum": 40000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "expr": "$.success",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "_id": "req_5",
+      "colId": "api_store",
+      "containerId": "users",
+      "name": "05. Ver Perfil Propio",
+      "url": "{{base_url}}/api/users/profile",
+      "method": "GET",
+      "sortNum": 50000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_6",
+      "colId": "api_store",
+      "containerId": "users",
+      "name": "06. Actualizar Perfil",
+      "url": "{{base_url}}/api/users/profile",
+      "method": "PUT",
+      "sortNum": 60000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"nuevo_email@example.com\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_7",
+      "colId": "api_store",
+      "containerId": "admin",
+      "name": "07. Listar Todos los Usuarios (Admin)",
+      "url": "{{base_url}}/api/users/",
+      "method": "GET",
+      "sortNum": 70000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "params": [
+        {
+          "name": "include_inactive",
+          "value": "false",
+          "isDisabled": false
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_8",
+      "colId": "api_store",
+      "containerId": "admin",
+      "name": "08. Crear Usuario (Admin)",
+      "url": "{{base_url}}/api/users/create",
+      "method": "POST",
+      "sortNum": 80000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"username\": \"nuevo_admin\",\n  \"email\": \"admin_nuevo@example.com\",\n  \"password\": \"Admin123!\",\n  \"role\": \"admin\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "201"
+        }
+      ]
+    },
+    {
+      "_id": "req_9",
+      "colId": "api_store",
+      "containerId": "admin",
+      "name": "09. Cambiar Rol de Usuario (Admin)",
+      "url": "{{base_url}}/api/users/2/role",
+      "method": "PUT",
+      "sortNum": 90000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"role\": \"admin\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_10",
+      "colId": "api_store",
+      "containerId": "admin",
+      "name": "10. Activar/Desactivar Usuario (Admin)",
+      "url": "{{base_url}}/api/users/2/toggle-status",
+      "method": "PUT",
+      "sortNum": 100000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_11",
+      "colId": "api_store",
+      "containerId": "admin",
+      "name": "11. Eliminar Usuario (Admin)",
+      "url": "{{base_url}}/api/users/3",
+      "method": "DELETE",
+      "sortNum": 110000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_12",
+      "colId": "api_store",
+      "containerId": "stores",
+      "name": "12. Listar Tiendas (Paginado)",
+      "url": "{{base_url}}/api/stores",
+      "method": "GET",
+      "sortNum": 120000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [],
+      "params": [
+        {
+          "name": "page",
+          "value": "1",
+          "isDisabled": false
+        },
+        {
+          "name": "per_page",
+          "value": "10",
+          "isDisabled": false
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_13",
+      "colId": "api_store",
+      "containerId": "stores",
+      "name": "13. Buscar Tiendas",
+      "url": "{{base_url}}/api/stores",
+      "method": "GET",
+      "sortNum": 130000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [],
+      "params": [
+        {
+          "name": "search",
+          "value": "150",
+          "isDisabled": false
+        },
+        {
+          "name": "page",
+          "value": "1",
+          "isDisabled": false
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_14",
+      "colId": "api_store",
+      "containerId": "stores",
+      "name": "14. Filtrar Tiendas",
+      "url": "{{base_url}}/api/stores",
+      "method": "GET",
+      "sortNum": 140000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [],
+      "params": [
+        {
+          "name": "min_area",
+          "value": "100",
+          "isDisabled": false
+        },
+        {
+          "name": "max_area",
+          "value": "500",
+          "isDisabled": false
+        },
+        {
+          "name": "min_sales",
+          "value": "10000",
+          "isDisabled": false
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_15",
+      "colId": "api_store",
+      "containerId": "stores",
+      "name": "15. Obtener Tienda por ID",
+      "url": "{{base_url}}/api/stores/1",
+      "method": "GET",
+      "sortNum": 150000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_16",
+      "colId": "api_store",
+      "containerId": "stores_admin",
+      "name": "16. Crear Tienda (Admin)",
+      "url": "{{base_url}}/api/stores",
+      "method": "POST",
+      "sortNum": 160000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"store_area\": 250.5,\n  \"items_available\": 100,\n  \"daily_customer_count\": 500,\n  \"store_sales\": 35000.00\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "201"
+        }
+      ]
+    },
+    {
+      "_id": "req_17",
+      "colId": "api_store",
+      "containerId": "stores_admin",
+      "name": "17. Actualizar Tienda (Admin)",
+      "url": "{{base_url}}/api/stores/1",
+      "method": "PUT",
+      "sortNum": 170000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"store_area\": 300.0,\n  \"items_available\": 120,\n  \"daily_customer_count\": 600,\n  \"store_sales\": 40000.00\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_18",
+      "colId": "api_store",
+      "containerId": "stores_admin",
+      "name": "18. Eliminar Tienda (Admin)",
+      "url": "{{base_url}}/api/stores/1",
+      "method": "DELETE",
+      "sortNum": 180000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_19",
+      "colId": "api_store",
+      "containerId": "stores_admin",
+      "name": "19. Obtener Estadísticas (Admin)",
+      "url": "{{base_url}}/api/stores/stats",
+      "method": "GET",
+      "sortNum": 190000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "req_20",
+      "colId": "api_store",
+      "containerId": "stores_admin",
+      "name": "20. Exportar Tiendas a CSV (Admin)",
+      "url": "{{base_url}}/api/stores/export",
+      "method": "GET",
+      "sortNum": 200000,
+      "created": "2025-10-12T00:00:00.000Z",
+      "modified": "2025-10-12T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{auth_token}}"
+        }
+      ],
+      "params": [
+        {
+          "name": "search",
+          "value": "",
+          "isDisabled": true
+        },
+        {
+          "name": "min_area",
+          "value": "",
+          "isDisabled": true
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    }
+  ],
+  "folders": [
+    {
+      "_id": "auth",
+      "name": "🔐 Autenticación",
+      "containerId": "",
+      "sortNum": 10000
+    },
+    {
+      "_id": "users",
+      "name": "👤 Perfil de Usuario",
+      "containerId": "",
+      "sortNum": 20000
+    },
+    {
+      "_id": "admin",
+      "name": "👥 Gestión de Usuarios (Admin)",
+      "containerId": "",
+      "sortNum": 30000
+    },
+    {
+      "_id": "stores",
+      "name": "🏪 Tiendas (Público)",
+      "containerId": "",
+      "sortNum": 40000
+    },
+    {
+      "_id": "stores_admin",
+      "name": "🏪 Gestión de Tiendas (Admin)",
+      "containerId": "",
+      "sortNum": 50000
+    }
+  ],
+  "environments": [
+    {
+      "_id": "env_1",
+      "name": "Development",
+      "data": [
+        {
+          "name": "base_url",
+          "value": "http://localhost:5000"
+        },
+        {
+          "name": "auth_token",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "_id": "env_2",
+      "name": "Production",
+      "data": [
+        {
+          "name": "base_url",
+          "value": "https://tu-app.railway.app"
+        },
+        {
+          "name": "auth_token",
+          "value": ""
+        }
+      ]
+    }
+  ]
+}
