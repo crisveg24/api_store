@@ -1456,6 +1456,24 @@ $(document).ready(function() {
             }
         });
         
+        // Handler for store card dropdown toggles - delegated event
+        $(document).on('click', '.store-card .dropdown-toggle', function(e) {
+            console.log('Store card dropdown toggle clicked');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const dropdown = $(this).closest('.dropdown');
+            const wasActive = dropdown.hasClass('active');
+            
+            // Close all other dropdowns
+            $('.dropdown').removeClass('active');
+            
+            // Toggle this dropdown
+            if (!wasActive) {
+                dropdown.addClass('active');
+            }
+        });
+        
         // Save store button handler
         $('#saveStoreBtn').on('click', function(e) {
             console.log('💾 Save store button clicked');
